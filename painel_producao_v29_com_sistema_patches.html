@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Produção v29 — Dark Channel</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f0f0f;
+    --bg2: #1a1a1a;
+    --bg3: #242424;
+    --border: #2e2e2e;
+    --border2: #3d3d3d;
+    --text: #e8e8e8;
+    --text2: #999;
+    --text3: #666;
+    --accent: #e0e0e0;
+    --amber: #f5a623;
+    --amber-bg: #2a1f00;
+    --blue: #4a9eff;
+    --blue-bg: #001e3c;
+    --green: #4caf50;
+    --green-bg: #0a1f0a;
+    --gray-bg: #2a2a2a;
+    --purple: #a970ff;
+    --purple-bg: #1f1533;
+    --lime: #b6ff00;
+    --lime-bg: #1b2e00;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.5; }
+
+  header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; gap: 16px; justify-content: space-between; }
+  header h1 { font-size: 15px; font-weight: 600; color: var(--text); }
+  header span { font-size: 12px; color: var(--text3); }
+  #projeto-display { font-size: 12px; color: var(--amber); background: var(--amber-bg); padding: 3px 10px; border-radius: 20px; }
+  
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .version-badge { font-size: 11px; color: var(--text3); background: var(--bg3); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border); }
+  .update-indicator { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; margin-left: 4px; display: none; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .update-indicator.show { display: inline-block; }
+
+  .main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+  .tab { padding: 10px 20px; font-size: 13px; cursor: pointer; border: none; background: none; color: var(--text2); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--text); border-bottom: 2px solid var(--amber); font-weight: 500; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 16px; }
+  .card h2 { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+
+  label { font-size: 12px; color: var(--text2); display: block; margin-bottom: 6px; }
+  textarea, input[type=text], select {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius);
+    color: var(--text); font-family: inherit; font-size: 13px; padding: 8px 12px;
+    transition: border-color 0.15s;
+  }
+  textarea:focus, input[type=text]:focus, select:focus { outline: none; border-color: var(--border2); }
+  textarea { resize: vertical; min-height: 160px; }
+
+  .row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+  .row > * { flex: 1; min-width: 160px; }
+  .row > button { flex: 0; min-width: auto; }
+
+  button { cursor: pointer; font-family: inherit; font-size: 13px; border-radius: var(--radius); border: 1px solid var(--border2); background: var(--bg3); color: var(--text); padding: 8px 16px; transition: background 0.15s; white-space: nowrap; }
+  button:hover { background: var(--border); }
+  .btn-primary { background: var(--amber); color: #000; border-color: var(--amber); font-weight: 600; }
+  .btn-primary:hover { background: #e09000; border-color: #e09000; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-ghost { background: none; border-color: transparent; color: var(--text2); }
+  .btn-ghost:hover { background: var(--bg3); color: var(--text); }
+
+  .hint { font-size: 11px; color: var(--text3); margin-top: 6px; }
+
+  /* NOVO: Painel de Atualizações */
+  .update-panel { background: var(--blue-bg); border: 1px solid var(--blue); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 20px; display: none; }
+  .update-panel.show { display: block; }
+  .update-panel h3 { color: var(--blue); font-size: 13px; margin-bottom: 10px; }
+  .update-panel p { font-size: 12px; color: var(--text2); margin-bottom: 10px; line-height: 1.6; }
+  .update-panel .row { gap: 8px; }
+  .update-panel button { font-size: 12px; padding: 6px 12px; }
+  .btn-apply-patch { background: var(--blue); color: #000; border-color: var(--blue); font-weight: 600; }
+  .btn-apply-patch:hover { background: #5aacff; border-color: #5aacff; }
+  .btn-dismiss-update { background: transparent; border-color: var(--text3); color: var(--text3); }
+  .btn-dismiss-update:hover { background: var(--bg3); color: var(--text2); }
+
+  /* NOVO: Histórico de Versões */
+  .version-history { font-size: 12px; color: var(--text2); }
+  .version-item { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .version-item:last-child { border-bottom: none; }
+  .version-number { font-family: monospace; font-weight: 600; color: var(--amber); min-width: 45px; }
+  .version-date { color: var(--text3); font-size: 11px; }
+  .version-status { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+  .status-active { background: var(--green-bg); color: var(--green); }
+  .status-archived { background: var(--gray-bg); color: var(--text3); }
+
+  /* Stats */
+  .stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 20px; }
+  .stat { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; text-align: center; }
+  .stat-num { font-size: 24px; font-weight: 600; }
+  .stat-lbl { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .s-total .stat-num { color: var(--text); }
+  .s-pending .stat-num { color: var(--text2); }
+  .s-waiting .stat-num { color: var(--blue); }
+  .s-done .stat-num { color: var(--amber); }
+  .s-organized .stat-num { color: var(--green); }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .b-pending { background: var(--gray-bg); color: var(--text2); }
+  .b-waiting { background: var(--blue-bg); color: var(--blue); }
+  .b-done { background: var(--amber-bg); color: var(--amber); }
+  .b-organized { background: var(--green-bg); color: var(--green); }
+
+  /* Filter bar */
+  .filter-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .filter-bar select { width: auto; min-width: 160px; }
+  .filter-bar input { flex: 1; min-width: 180px; }
+  .filter-bar .ml { margin-left: auto; display: flex; gap: 6px; }
+
+  /* Filtro por categoria de sugestão (estilo Notion) */
+  .filtro-cat-wrap { position: relative; }
+  .btn-filtro-cat { display: flex; align-items: center; gap: 7px; padding: 8px 14px; font-size: 13px; border-radius: var(--radius); border: 1px solid var(--border2); background: var(--bg3); color: var(--text2); cursor: pointer; white-space: nowrap; }
+  .btn-filtro-cat:hover { background: var(--border); color: var(--text); }
+  .btn-filtro-cat.active { border-color: var(--amber); color: var(--amber); }
+  .btn-filtro-cat svg { width: 13px; height: 13px; flex-shrink: 0; }
+  .filtro-cat-badge { display: none; background: var(--amber); color: #000; font-size: 10px; font-weight: 700; line-height: 1; padding: 3px 6px; border-radius: 10px; }
+  .filtro-cat-dropdown { display: none; position: absolute; top: calc(100% + 6px); left: 0; right: auto; text-align: left; min-width: 230px; max-width: 280px; background: #1a1a1a; border: 1px solid var(--border2); border-radius: var(--radius); box-shadow: 0 10px 30px rgba(0,0,0,0.55); padding: 6px; z-index: 300; }
+  .filtro-cat-dropdown.open { display: block; }
+  .filtro-cat-hdr { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 8px 8px; text-align: left; }
+  .filtro-cat-item { display: flex; align-items: center; justify-content: flex-start; gap: 9px; padding: 7px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--text); user-select: none; text-align: left; }
+  .filtro-cat-item:hover { background: var(--bg3); }
+  .filtro-cat-item input { cursor: pointer; accent-color: var(--amber); width: 14px; height: 14px; flex-shrink: 0; margin: 0; order: 0; }
+  .filtro-cat-item span.filtro-cat-lbl { flex: 1; text-align: left; order: 1; }
+  .filtro-cat-count { font-size: 11px; color: var(--text3); order: 2; margin-left: auto; }
+  .filtro-cat-empty { padding: 10px 8px; font-size: 12px; color: var(--text3); font-style: italic; max-width: 210px; }
+  .filtro-cat-footer { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 6px; display: flex; justify-content: flex-end; }
+  .filtro-cat-clear { font-size: 12px; color: var(--text3); background: none; border: none; cursor: pointer; padding: 4px 6px; }
+  .filtro-cat-clear:hover { color: var(--text); text-decoration: underline; }
+
+  /* Filtro roxo de Status IA (Gerando imagem / Gerando vídeo) — mesmo padrão do filtro de Sugestão */
+  .btn-filtro-ia.active { border-color: var(--purple); color: var(--purple); }
+  .filtro-ia-badge { display: none; background: var(--purple); color: #000; font-size: 10px; font-weight: 700; line-height: 1; padding: 3px 6px; border-radius: 10px; }
+  .filtro-ia-dropdown { display: none; position: absolute; top: calc(100% + 6px); left: 0; right: auto; text-align: left; min-width: 200px; background: #1a1a1a; border: 1px solid var(--border2); border-radius: var(--radius); box-shadow: 0 10px 30px rgba(0,0,0,0.55); padding: 6px; z-index: 300; }
+  .filtro-ia-dropdown.open { display: block; }
+  .filtro-ia-item input { accent-color: var(--purple); }
+
+  /* Botão separado "Gerar vídeo" em verde-limão — mesma cor do badge ⭐ GERAR VÍDEO */
+  .btn-gerar-video { border-color: #5c8a00; color: var(--lime); background: var(--bg3); }
+  .btn-gerar-video:hover { background: var(--lime-bg); }
+  .btn-gerar-video.active { background: var(--lime-bg); border-color: var(--lime); color: var(--lime); }
+
+  /* Parts table */
+  .parts-table { width: 100%; border-collapse: collapse; }
+  .parts-table th { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 500; padding: 6px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+  .parts-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .parts-table tr:last-child td { border-bottom: none; }
+  .parts-table tr:hover td { background: var(--bg3); }
+  .col-num { width: 48px; color: var(--text3); font-size: 12px; font-family: monospace; }
+  .col-desc { min-width: 200px; }
+  .col-folder { min-width: 140px; }
+  .col-link { min-width: 200px; }
+  .col-action { width: 180px; }
+  .action-cell { display: flex; gap: 5px; align-items: flex-start; }
+  .status-select { font-size: 12px; padding: 5px 8px; flex: 1; cursor: pointer; border-radius: 6px; border: 1px solid #3d3d3d; background: #242424; color: #e8e8e8; font-family: inherit; }
+  .status-select:focus { outline: none; border-color: #f5a623; }
+  .btn-advance { padding: 5px 9px; font-size: 13px; border-radius: 6px; border: 1px solid #3d3d3d; background: #242424; color: #e8e8e8; cursor: pointer; flex-shrink: 0; line-height: 1; }
+  .btn-advance:hover { background: #f5a623; color: #000; border-color: #f5a623; }
+
+  #toast {
+    position: fixed; bottom: 20px; left: 20px; background: #2a2a2a; color: #e8e8e8;
+    padding: 12px 16px; border-radius: 6px; font-size: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 9999;
+  }
+
+  .save-footer { position: fixed; bottom: 20px; right: 20px; display: flex; gap: 8px; align-items: center; }
+  .btn-save-footer, .btn-backup-footer { padding: 8px 14px; font-size: 12px; border-radius: 6px; background: var(--bg2); border: 1px solid var(--border2); color: var(--text); cursor: pointer; }
+  .btn-save-footer:hover, .btn-backup-footer:hover { background: var(--border); }
+  .btn-save-footer.shake, .btn-backup-footer.shake { animation: shake 0.3s; }
+  @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+  .footer-saved-at { font-size: 11px; color: var(--text3); }
+  .save-footer-spacer { height: 60px; }
+
+  .video-ia-footer { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 999; }
+  .btn-video-ia-footer { padding: 10px 18px; font-size: 12px; border-radius: 6px; background: var(--lime); border: 1px solid var(--lime); color: #000; font-weight: 600; cursor: pointer; }
+  .btn-video-ia-footer:hover { background: #c4ff00; border-color: #c4ff00; }
+
+  @media(max-width: 768px) {
+    .stat-grid { grid-template-columns: repeat(3, 1fr); }
+    .parts-table { font-size: 12px; }
+    .parts-table th, .parts-table td { padding: 4px 6px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Painel de Produção</h1>
+    <span id="projeto-display">Nenhum projeto</span>
+  </div>
+  <div class="header-right">
+    <span class="version-badge">v<span id="current-version">29</span><span class="update-indicator" id="update-indicator"></span></span>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- NOVO: Painel de Atualizações -->
+  <div class="update-panel" id="update-panel">
+    <h3>🔄 Atualização de Versão Disponível</h3>
+    <p id="update-message"></p>
+    <div class="row">
+      <button class="btn-apply-patch" onclick="aplicarPatch()">Aplicar Atualização</button>
+      <button class="btn-dismiss-update" onclick="descartarAtualizacao()">Agora não</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('dashboard', this)">📊 Dashboard</button>
+    <button class="tab" onclick="switchTab('partes', this)">📝 Partes</button>
+    <button class="tab" onclick="switchTab('config', this)">⚙️ Configurações</button>
+  </div>
+
+  <!-- Dashboard Tab -->
+  <div class="panel active" id="dashboard">
+    <div class="card">
+      <h2>📌 Novo Projeto</h2>
+      <div class="row">
+        <input type="text" id="projeto-nome" placeholder="Nome do projeto">
+        <button class="btn-primary" onclick="criarProjeto()">Criar</button>
+      </div>
+    </div>
+
+    <div class="card" id="card-stats" style="display:none;">
+      <h2>📈 Resumo</h2>
+      <div class="stat-grid">
+        <div class="stat s-total">
+          <div class="stat-num" id="stat-total">0</div>
+          <div class="stat-lbl">Total</div>
+        </div>
+        <div class="stat s-pending">
+          <div class="stat-num" id="stat-pending">0</div>
+          <div class="stat-lbl">Pendente</div>
+        </div>
+        <div class="stat s-waiting">
+          <div class="stat-num" id="stat-waiting">0</div>
+          <div class="stat-lbl">Aguardando</div>
+        </div>
+        <div class="stat s-done">
+          <div class="stat-num" id="stat-done">0</div>
+          <div class="stat-lbl">Pronto</div>
+        </div>
+        <div class="stat s-organized">
+          <div class="stat-num" id="stat-organized">0</div>
+          <div class="stat-lbl">Organizado</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="card-projetos-salvos" style="display:none;">
+      <h2>💾 Projetos Salvos</h2>
+      <div class="version-history" id="lista-projetos"></div>
+    </div>
+  </div>
+
+  <!-- Partes Tab -->
+  <div class="panel" id="partes">
+    <div class="card">
+      <h2>📄 Roteiro</h2>
+      <textarea id="roteiro-input" placeholder="Cole o roteiro aqui..."></textarea>
+      <div class="hint">Divida o roteiro em partes numeradas (ex: "1. Introdução\n2. Desenvolvimento...")</div>
+      <div class="row" style="margin-top: 12px;">
+        <input type="text" id="sugestoes-keyword" placeholder="Palavras-chave padrão para sugestões (separadas por |)">
+        <button class="btn-primary" onclick="parseRoteiro()">Processar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>⚙️ Filtros & Ações</h2>
+      <div class="filter-bar">
+        <div class="filtro-cat-wrap">
+          <button class="btn-filtro-cat" id="btn-filtro-cat" onclick="toggleFiltroCat()">
+            🏷️ Sugestões
+            <span class="filtro-cat-badge" id="filtro-cat-badge">0</span>
+          </button>
+          <div class="filtro-cat-dropdown" id="filtro-cat-dropdown">
+            <div class="filtro-cat-hdr">Categorias</div>
+            <div id="filtro-cat-opcoes"></div>
+            <div class="filtro-cat-footer">
+              <button class="filtro-cat-clear" onclick="limparFiltroCat()">Limpar</button>
+            </div>
+          </div>
+        </div>
+        <div class="filtro-cat-wrap">
+          <button class="btn-filtro-cat btn-filtro-ia" id="btn-filtro-ia" onclick="toggleFiltroIA()">
+            🤖 Status IA
+            <span class="filtro-ia-badge" id="filtro-ia-badge">0</span>
+          </button>
+          <div class="filtro-ia-dropdown" id="filtro-ia-dropdown">
+            <div class="filtro-cat-hdr">Status de Geração</div>
+            <div id="filtro-ia-opcoes"></div>
+            <div class="filtro-cat-footer">
+              <button class="filtro-cat-clear" onclick="limparFiltroIA()">Limpar</button>
+            </div>
+          </div>
+        </div>
+        <button class="btn-filtro-cat btn-gerar-video" id="btn-gerar-video" onclick="toggleGerarVideo()">
+          ⭐ Gerar Vídeo
+        </button>
+        <div class="ml">
+          <button class="btn-ghost" onclick="limparTudo()">Limpar Tudo</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📋 Partes</h2>
+      <div id="partes-list"></div>
+    </div>
+  </div>
+
+  <!-- Config Tab -->
+  <div class="panel" id="config">
+    <div class="card">
+      <h2>📦 Sobre a Versão</h2>
+      <div style="font-size: 13px; line-height: 1.8; color: var(--text2);">
+        <p><strong>Versão Atual:</strong> <span id="version-display">v29</span></p>
+        <p><strong>Última Atualização:</strong> <span id="last-update-display">-</span></p>
+        <p><strong>Histórico de Versões:</strong></p>
+        <div class="version-history" id="version-log" style="margin-top: 12px;"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🔄 Sistema de Patches</h2>
+      <p style="font-size: 12px; color: var(--text2); margin-bottom: 12px;">
+        Carregue um arquivo JSON de patch para atualizar o dashboard sem criar um novo HTML.
+      </p>
+      <div class="row">
+        <input type="file" id="patch-file" accept=".json" style="padding: 8px 12px; cursor: pointer;">
+        <button class="btn-primary" onclick="carregarPatch()">Carregar Patch</button>
+      </div>
+      <div id="patch-status" style="font-size: 12px; color: var(--text3); margin-top: 8px;"></div>
+    </div>
+
+    <div class="card">
+      <h2>💾 Backup & Restore</h2>
+      <div class="row">
+        <button class="btn-primary" onclick="exportarJSON()">Fazer Backup JSON</button>
+        <button class="btn-ghost" onclick="importarJSON()">Restaurar JSON</button>
+        <input type="file" id="restore-file" accept=".json" style="display:none;">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🗑️ Dados</h2>
+      <p style="font-size: 12px; color: var(--text2); margin-bottom: 12px;">
+        ⚠️ Estas ações não podem ser desfeitas.
+      </p>
+      <div class="row">
+        <button class="btn-ghost" style="color: #ff6b6b;" onclick="apagarCacheLocal()">Apagar Cache Local</button>
+        <button class="btn-ghost" style="color: #ff6b6b;" onclick="apagarTodosCaches()">Apagar Todos os Caches</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================================
+// SISTEMA DE VERSIONAMENTO E PATCHES
+// ============================================================================
+
+const VERSAO_ATUAL = '29';
+const CHAVE_VERSAO = 'painel_versao';
+const CHAVE_CACHE_PREFIX = 'painel_producao_';
+const CHAVE_PROJETOS = 'painel_projetos';
+const CHAVE_HISTORICO_VERSOES = 'painel_historico_versoes';
+
+// Histórico de versões e mudanças
+const VERSAO_LOG = [
+  { v: '29', data: '2024-01-20', descricao: 'Sistema de patches integrado', alteracoes: 'Novo sistema de versionamento e atualizações via JSON' },
+  { v: '28', data: '2024-01-15', descricao: 'Versão anterior', alteracoes: 'Estável' }
+];
+
+// ============================================================================
+// INICIALIZAÇÃO E MIGRAÇÃO DE DADOS
+// ============================================================================
+
+function inicializarSistema() {
+  const versaoAntiga = localStorage.getItem(CHAVE_VERSAO);
+  
+  if (!versaoAntiga) {
+    // Primeira execução
+    localStorage.setItem(CHAVE_VERSAO, VERSAO_ATUAL);
+    localStorage.setItem(CHAVE_HISTORICO_VERSOES, JSON.stringify(VERSAO_LOG));
+    atualizarUIVersao();
+    return;
+  }
+
+  if (versaoAntiga !== VERSAO_ATUAL) {
+    // Versão mudou - executar migração
+    executarMigracao(versaoAntiga, VERSAO_ATUAL);
+  }
+
+  atualizarUIVersao();
+}
+
+function executarMigracao(versaoAntiga, versaoNova) {
+  console.log(`Migrando de v${versaoAntiga} para v${versaoNova}`);
+
+  // 1. Preservar dados de todos os projetos
+  const projetos = JSON.parse(localStorage.getItem(CHAVE_PROJETOS) || '[]');
+  projetos.forEach(projeto => {
+    const chaveAntiga = CHAVE_CACHE_PREFIX + projeto;
+    const dados = localStorage.getItem(chaveAntiga);
+    if (dados) {
+      // Adicionar metadados de versão ao cache
+      const dadosObj = JSON.parse(dados);
+      dadosObj.versaoOriginaria = versaoAntiga;
+      dadosObj.dataMigracao = new Date().toISOString();
+      localStorage.setItem(chaveAntiga, JSON.stringify(dadosObj));
+    }
+  });
+
+  // 2. Atualizar versão
+  localStorage.setItem(CHAVE_VERSAO, versaoNova);
+
+  // 3. Atualizar histórico
+  let historico = JSON.parse(localStorage.getItem(CHAVE_HISTORICO_VERSOES) || '[]');
+  const jaExiste = historico.find(h => h.v === versaoNova);
+  if (!jaExiste) {
+    historico.unshift(VERSAO_LOG[0]); // Adiciona a versão mais recente
+  }
+  localStorage.setItem(CHAVE_HISTORICO_VERSOES, JSON.stringify(historico));
+
+  mostrarToast(`✅ Migrado para v${versaoNova}. Seu histórico foi preservado!`);
+}
+
+function atualizarUIVersao() {
+  document.getElementById('current-version').textContent = VERSAO_ATUAL;
+  document.getElementById('version-display').textContent = `v${VERSAO_ATUAL}`;
+  
+  const historico = JSON.parse(localStorage.getItem(CHAVE_HISTORICO_VERSOES) || '[]');
+  const ultimaData = historico[0]?.data || '-';
+  document.getElementById('last-update-display').textContent = ultimaData;
+
+  // Renderizar log de versões
+  const versionLog = document.getElementById('version-log');
+  versionLog.innerHTML = historico.map(item => `
+    <div class="version-item">
+      <span class="version-number">${item.v}</span>
+      <div>
+        <strong style="color: var(--text);">${item.descricao}</strong>
+        <div style="font-size: 11px; color: var(--text3);">${item.data}</div>
+      </div>
+      <span class="version-status status-active">Ativa</span>
+    </div>
+  `).join('');
+}
+
+// ============================================================================
+// SISTEMA DE PATCHES
+// ============================================================================
+
+function carregarPatch() {
+  const fileInput = document.getElementById('patch-file');
+  const file = fileInput.files[0];
+
+  if (!file) {
+    mostrarToast('Selecione um arquivo de patch');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const patch = JSON.parse(e.target.result);
+      
+      // Validar estrutura do patch
+      if (!patch.versao || !patch.alteracoes) {
+        throw new Error('Patch inválido. Deve conter "versao" e "alteracoes"');
+      }
+
+      // Mostrar preview
+      const status = document.getElementById('patch-status');
+      status.innerHTML = `
+        <strong>Patch Carregado:</strong><br>
+        Versão: v${patch.versao}<br>
+        Alterações: ${Object.keys(patch.alteracoes).length} mudanças<br>
+        <small style="color: var(--text3);">Clique em "Aplicar Atualização" no topo da página para instalar.</small>
+      `;
+
+      // Armazenar patch pendente
+      sessionStorage.setItem('patch_pendente', JSON.stringify(patch));
+      
+      // Mostrar painel de atualização
+      mostrarPainelAtualizacao(patch);
+
+    } catch (err) {
+      document.getElementById('patch-status').innerHTML = `<span style="color: #ff6b6b;">❌ Erro ao carregar patch: ${err.message}</span>`;
+      mostrarToast('Erro ao carregar patch');
+    }
+  };
+
+  reader.readAsText(file);
+}
+
+function mostrarPainelAtualizacao(patch) {
+  const panel = document.getElementById('update-panel');
+  const message = document.getElementById('update-message');
+  
+  message.innerHTML = `
+    <strong>Versão ${patch.versao}</strong> disponível para instalação.<br>
+    Alterações: ${patch.descricao || 'Atualizações de melhorias'}<br>
+    <small>${Object.keys(patch.alteracoes).length} mudanças a serem aplicadas.</small>
+  `;
+  
+  panel.classList.add('show');
+  document.getElementById('update-indicator').classList.add('show');
+}
+
+function aplicarPatch() {
+  const patchStr = sessionStorage.getItem('patch_pendente');
+  
+  if (!patchStr) {
+    mostrarToast('Nenhum patch pendente');
+    return;
+  }
+
+  try {
+    const patch = JSON.parse(patchStr);
+    let alteracoesAplicadas = 0;
+
+    // Aplicar alterações de CSS
+    if (patch.alteracoes.css) {
+      Object.entries(patch.alteracoes.css).forEach(([seletor, propriedades]) => {
+        const elementos = document.querySelectorAll(seletor);
+        elementos.forEach(el => {
+          Object.entries(propriedades).forEach(([prop, valor]) => {
+            el.style[prop] = valor;
+          });
+        });
+        alteracoesAplicadas++;
+      });
+    }
+
+    // Aplicar alterações de variáveis CSS
+    if (patch.alteracoes.variaveis) {
+      const root = document.documentElement;
+      Object.entries(patch.alteracoes.variaveis).forEach(([varName, valor]) => {
+        root.style.setProperty(varName, valor);
+        alteracoesAplicadas++;
+      });
+    }
+
+    // Aplicar alterações de HTML
+    if (patch.alteracoes.html) {
+      Object.entries(patch.alteracoes.html).forEach(([id, conteudo]) => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.innerHTML = conteudo;
+          alteracoesAplicadas++;
+        }
+      });
+    }
+
+    // Atualizar versão
+    localStorage.setItem(CHAVE_VERSAO, patch.versao);
+    
+    // Adicionar ao histórico
+    let historico = JSON.parse(localStorage.getItem(CHAVE_HISTORICO_VERSOES) || '[]');
+    if (!historico.find(h => h.v === patch.versao)) {
+      historico.unshift({
+        v: patch.versao,
+        data: new Date().toISOString().split('T')[0],
+        descricao: patch.descricao || 'Atualização automática',
+        alteracoes: patch.descricao || 'Aplicada via patch'
+      });
+      localStorage.setItem(CHAVE_HISTORICO_VERSOES, JSON.stringify(historico));
+    }
+
+    sessionStorage.removeItem('patch_pendente');
+    document.getElementById('update-panel').classList.remove('show');
+    document.getElementById('update-indicator').classList.remove('show');
+    
+    atualizarUIVersao();
+    mostrarToast(`✅ Patch aplicado! ${alteracoesAplicadas} alterações instaladas.`);
+
+  } catch (err) {
+    mostrarToast(`Erro ao aplicar patch: ${err.message}`);
+  }
+}
+
+function descartarAtualizacao() {
+  sessionStorage.removeItem('patch_pendente');
+  document.getElementById('update-panel').classList.remove('show');
+  document.getElementById('update-indicator').classList.remove('show');
+  mostrarToast('Atualização descartada');
+}
+
+// ============================================================================
+// FUNÇÕES ORIGINAIS (Modificadas para o novo sistema)
+// ============================================================================
+
+let partes = [];
+let projetoAtual = '';
+let filtroCategorias = new Set();
+let filtroIASubstatus = new Set();
+let gerarVideoAtivo = false;
+
+const FRASE_VIDEO_IA = 'Gere um vídeo profissional em 4K para a seguinte descrição:';
+
+function criarProjeto() {
+  const nome = document.getElementById('projeto-nome').value.trim();
+  if (!nome) { mostrarToast('Digite um nome para o projeto'); return; }
+  
+  projetoAtual = nome;
+  partes = [];
+  filtroCategorias.clear();
+  filtroIASubstatus.clear();
+  gerarVideoAtivo = false;
+  
+  document.getElementById('projeto-display').textContent = projetoAtual;
+  document.title = `Painel — ${projetoAtual}`;
+  document.getElementById('projeto-nome').value = '';
+  document.getElementById('roteiro-input').value = '';
+  document.getElementById('sugestoes-keyword').value = '';
+  
+  salvarLocalmente();
+  renderPartes();
+  mostrarToast(`Projeto "${nome}" criado!`);
+}
+
+function switchTab(tabName, btnElement) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(tabName).classList.add('active');
+  if (btnElement) btnElement.classList.add('active');
+  
+  if (tabName === 'dashboard') atualizarStats();
+}
+
+function parseRoteiro() {
+  const roteiro = document.getElementById('roteiro-input').value;
+  if (!roteiro) { mostrarToast('Cole um roteiro'); return; }
+  
+  const linhas = roteiro.split('\n').filter(l => l.trim());
+  partes = [];
+  
+  linhas.forEach((linha, idx) => {
+    const match = linha.match(/^(\d+)\.\s*(.+)$/);
+    if (match) {
+      partes.push({
+        id: `parte-${Date.now()}-${idx}`,
+        numero: parseInt(match[1]),
+        descricao: match[2].trim(),
+        pasta: '',
+        link: '',
+        status: 'pendente',
+        categorias: [],
+        statusIA: [],
+        opcoes: [],
+        sugestoesCustom: ''
+      });
+    }
+  });
+  
+  renderPartes();
+  salvarLocalmente();
+  mostrarToast(`${partes.length} partes processadas!`);
+}
+
+function renderPartes() {
+  const container = document.getElementById('partes-list');
+  if (partes.length === 0) { container.innerHTML = '<p style="color:var(--text3);font-size:12px;">Nenhuma parte adicionada</p>'; return; }
+  
+  container.innerHTML = partes.map(p => `
+    <div class="card" style="margin-bottom: 16px; position: relative;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+        <span style="font-size: 14px; font-weight: 600; color: var(--text);">#${p.numero}</span>
+        <span style="flex: 1; color: var(--text2);">${p.descricao}</span>
+      </div>
+      <table class="parts-table" style="width: 100%;">
+        <tr>
+          <td style="font-size: 11px; color: var(--text3); padding: 6px 0;">Pasta:</td>
+          <td><input type="text" value="${p.pasta}" onchange="atualizarParte('${p.id}', 'pasta', this.value)" style="width: 100%; padding: 4px; font-size: 12px;"></td>
+        </tr>
+        <tr>
+          <td style="font-size: 11px; color: var(--text3); padding: 6px 0;">Link:</td>
+          <td><input type="text" value="${p.link}" onchange="atualizarParte('${p.id}', 'link', this.value)" style="width: 100%; padding: 4px; font-size: 12px;"></td>
+        </tr>
+        <tr>
+          <td style="font-size: 11px; color: var(--text3); padding: 6px 0;">Status:</td>
+          <td>
+            <select class="status-select" onchange="atualizarParte('${p.id}', 'status', this.value)">
+              <option value="pendente" ${p.status === 'pendente' ? 'selected' : ''}>Pendente</option>
+              <option value="aguardando" ${p.status === 'aguardando' ? 'selected' : ''}>Aguardando</option>
+              <option value="pronto" ${p.status === 'pronto' ? 'selected' : ''}>Pronto</option>
+              <option value="organizado" ${p.status === 'organizado' ? 'selected' : ''}>Organizado</option>
+            </select>
+          </td>
+        </tr>
+      </table>
+      <button class="btn-ghost" style="margin-top: 8px; color: #ff6b6b;" onclick="deletarParte('${p.id}')">✕ Remover</button>
+    </div>
+  `).join('');
+}
+
+function atualizarParte(id, campo, valor) {
+  const parte = partes.find(p => p.id === id);
+  if (parte) { parte[campo] = valor; salvarLocalmente(); }
+}
+
+function deletarParte(id) {
+  partes = partes.filter(p => p.id !== id);
+  renderPartes();
+  salvarLocalmente();
+}
+
+function atualizarStats() {
+  const total = partes.length;
+  const pending = partes.filter(p => p.status === 'pendente').length;
+  const waiting = partes.filter(p => p.status === 'aguardando').length;
+  const done = partes.filter(p => p.status === 'pronto').length;
+  const organized = partes.filter(p => p.status === 'organizado').length;
+  
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-pending').textContent = pending;
+  document.getElementById('stat-waiting').textContent = waiting;
+  document.getElementById('stat-done').textContent = done;
+  document.getElementById('stat-organized').textContent = organized;
+  
+  if (total > 0) document.getElementById('card-stats').style.display = 'block';
+}
+
+function toggleFiltroCat() {
+  document.getElementById('filtro-cat-dropdown').classList.toggle('open');
+}
+
+function toggleFiltroIA() {
+  document.getElementById('filtro-ia-dropdown').classList.toggle('open');
+}
+
+function toggleGerarVideo() {
+  gerarVideoAtivo = !gerarVideoAtivo;
+  document.getElementById('btn-gerar-video').classList.toggle('active');
+}
+
+function limparFiltroCat() {
+  filtroCategorias.clear();
+  document.querySelectorAll('#filtro-cat-opcoes input').forEach(ch => ch.checked = false);
+}
+
+function limparFiltroIA() {
+  filtroIASubstatus.clear();
+  document.querySelectorAll('#filtro-ia-opcoes input').forEach(ch => ch.checked = false);
+}
+
+function salvarLocalmente() {
+  try {
+    const dados = { projeto: projetoAtual, partes, salvo: new Date().toISOString(), versao: VERSAO_ATUAL };
+    localStorage.setItem(CHAVE_CACHE_PREFIX + projetoAtual, JSON.stringify(dados));
+    
+    const todos = JSON.parse(localStorage.getItem(CHAVE_PROJETOS) || '[]');
+    if (!todos.includes(projetoAtual)) { todos.push(projetoAtual); localStorage.setItem(CHAVE_PROJETOS, JSON.stringify(todos)); }
+    
+    const ts = document.getElementById('footer-saved-at');
+    if (ts) ts.textContent = 'Salvo às ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+  } catch(e) { console.warn('localStorage indisponível'); }
+}
+
+function exportarJSON() {
+  const dados = { projeto: projetoAtual, partes, versao: VERSAO_ATUAL, salvo: new Date().toISOString() };
+  const json = JSON.stringify(dados, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `painel_${projetoAtual}_v${VERSAO_ATUAL}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  mostrarToast('Backup exportado!');
+}
+
+function importarJSON() {
+  document.getElementById('restore-file').click();
+}
+
+document.getElementById('restore-file')?.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const dados = JSON.parse(ev.target.result);
+      partes = dados.partes || [];
+      projetoAtual = dados.projeto || 'Restaurado';
+      document.getElementById('projeto-display').textContent = projetoAtual;
+      document.title = `Painel — ${projetoAtual}`;
+      renderPartes();
+      salvarLocalmente();
+      mostrarToast('Dados restaurados!');
+    } catch(err) { mostrarToast('Erro ao restaurar'); }
+  };
+  reader.readAsText(file);
+});
+
+function apagarCacheLocal() {
+  if (!projetoAtual) { mostrarToast('Nenhum projeto selecionado'); return; }
+  if (!confirm(`Apagar cache de "${projetoAtual}"?`)) return;
+  
+  localStorage.removeItem(CHAVE_CACHE_PREFIX + projetoAtual);
+  let todos = JSON.parse(localStorage.getItem(CHAVE_PROJETOS) || '[]');
+  todos = todos.filter(n => n !== projetoAtual);
+  localStorage.setItem(CHAVE_PROJETOS, JSON.stringify(todos));
+  
+  partes = [];
+  projetoAtual = '';
+  document.getElementById('projeto-display').textContent = 'Nenhum projeto';
+  renderPartes();
+  carregarListaProjetos();
+  mostrarToast('Cache apagado');
+}
+
+function apagarTodosCaches() {
+  if (!confirm('⚠️ Isso apagará TODOS os caches. Tem certeza?')) return;
+  
+  const todos = JSON.parse(localStorage.getItem(CHAVE_PROJETOS) || '[]');
+  todos.forEach(nome => localStorage.removeItem(CHAVE_CACHE_PREFIX + nome));
+  localStorage.removeItem(CHAVE_PROJETOS);
+  
+  partes = [];
+  projetoAtual = '';
+  document.getElementById('projeto-display').textContent = 'Nenhum projeto';
+  renderPartes();
+  carregarListaProjetos();
+  mostrarToast('Todos os caches foram apagados');
+}
+
+function mostrarToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) { t = document.createElement('div'); t.id = 'toast'; document.body.appendChild(t); }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2200);
+}
+
+function carregarListaProjetos() {
+  try {
+    const todos = JSON.parse(localStorage.getItem(CHAVE_PROJETOS) || '[]');
+    const card = document.getElementById('card-projetos-salvos');
+    const lista = document.getElementById('lista-projetos');
+    if (!todos.length) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+    lista.innerHTML = todos.map(nome => {
+      const dados = JSON.parse(localStorage.getItem(CHAVE_CACHE_PREFIX + nome) || '{}');
+      const dt = dados.salvo ? new Date(dados.salvo).toLocaleString('pt-BR') : '';
+      const n = dados.partes ? dados.partes.length : 0;
+      const v = dados.versao || '?';
+      return `<div class="version-item">
+        <div style="flex:1;">
+          <span style="font-weight:500;">${nome}</span>
+          <div style="font-size:11px;color:var(--text3);">${n} partes · v${v} · salvo em ${dt}</div>
+        </div>
+        <button class="btn-sm" onclick="carregarProjeto('${nome}')">Carregar</button>
+        <button class="btn-sm btn-ghost" onclick="deletarProjeto('${nome}')" style="color:var(--text3);">✕</button>
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
+
+function carregarProjeto(nome) {
+  try {
+    const dados = JSON.parse(localStorage.getItem(CHAVE_CACHE_PREFIX + nome) || '{}');
+    if (!dados.partes) return;
+    partes = dados.partes;
+    projetoAtual = dados.projeto || nome;
+    filtroCategorias.clear();
+    filtroIASubstatus.clear();
+    gerarVideoAtivo = false;
+    document.getElementById('btn-gerar-video').classList.remove('active');
+    document.getElementById('projeto-display').textContent = projetoAtual;
+    document.title = `Painel — ${projetoAtual}`;
+    switchTab('partes', document.querySelectorAll('.tab')[1]);
+  } catch(e) {}
+}
+
+function deletarProjeto(nome) {
+  if (!confirm(`Deletar projeto "${nome}"?`)) return;
+  localStorage.removeItem(CHAVE_CACHE_PREFIX + nome);
+  let todos = JSON.parse(localStorage.getItem(CHAVE_PROJETOS) || '[]').filter(n => n !== nome);
+  localStorage.setItem(CHAVE_PROJETOS, JSON.stringify(todos));
+  carregarListaProjetos();
+}
+
+function limparTudo() {
+  if (!confirm('Limpar dados do projeto atual?')) return;
+  partes = [];
+  renderPartes();
+  salvarLocalmente();
+  mostrarToast('Dados limpos');
+}
+
+// Shake reminder
+setInterval(() => {
+  const btnS = document.getElementById('btn-footer-save');
+  if (btnS) { btnS.classList.remove('shake'); void btnS.offsetWidth; btnS.classList.add('shake'); }
+  setTimeout(() => { if (btnS) btnS.classList.remove('shake'); }, 600);
+}, 5 * 60 * 1000);
+
+// Inicializar
+window.addEventListener('load', () => {
+  inicializarSistema();
+  carregarListaProjetos();
+});
+</script>
+
+<div class="video-ia-footer">
+  <button class="btn-video-ia-footer" onclick="copiarTextoFixo(FRASE_VIDEO_IA)">🎬 Vídeo IA Prompt</button>
+</div>
+
+<div class="save-footer">
+  <button class="btn-save-footer" onclick="salvarLocalmente()">Salvar</button>
+  <button class="btn-backup-footer" onclick="exportarJSON()">Backup JSON</button>
+  <span class="footer-saved-at" id="footer-saved-at"></span>
+</div>
+
+<div class="save-footer-spacer"></div>
+
+</body>
+</html>
