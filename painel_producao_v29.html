@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Produção v29 — Dark Channel</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f0f0f;
+    --bg2: #1a1a1a;
+    --bg3: #242424;
+    --border: #2e2e2e;
+    --border2: #3d3d3d;
+    --text: #e8e8e8;
+    --text2: #999;
+    --text3: #666;
+    --accent: #e0e0e0;
+    --amber: #f5a623;
+    --amber-bg: #2a1f00;
+    --blue: #4a9eff;
+    --blue-bg: #001e3c;
+    --green: #4caf50;
+    --green-bg: #0a1f0a;
+    --gray-bg: #2a2a2a;
+    --purple: #a970ff;
+    --purple-bg: #1f1533;
+    --lime: #b6ff00;
+    --lime-bg: #1b2e00;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.5; }
+
+  header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; gap: 16px; }
+  header h1 { font-size: 15px; font-weight: 600; color: var(--text); }
+  header span { font-size: 12px; color: var(--text3); }
+  #projeto-display { font-size: 12px; color: var(--amber); background: var(--amber-bg); padding: 3px 10px; border-radius: 20px; }
+
+  .main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+  .tab { padding: 10px 20px; font-size: 13px; cursor: pointer; border: none; background: none; color: var(--text2); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--text); border-bottom: 2px solid var(--amber); font-weight: 500; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 16px; }
+  .card h2 { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+
+  label { font-size: 12px; color: var(--text2); display: block; margin-bottom: 6px; }
+  textarea, input[type=text], select {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius);
+    color: var(--text); font-family: inherit; font-size: 13px; padding: 8px 12px;
+    transition: border-color 0.15s;
+  }
+  textarea:focus, input[type=text]:focus, select:focus { outline: none; border-color: var(--border2); }
+  textarea { resize: vertical; min-height: 160px; }
+
+  .row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+  .row > * { flex: 1; min-width: 160px; }
+  .row > button { flex: 0; min-width: auto; }
+
+  button { cursor: pointer; font-family: inherit; font-size: 13px; border-radius: var(--radius); border: 1px solid var(--border2); background: var(--bg3); color: var(--text); padding: 8px 16px; transition: background 0.15s; white-space: nowrap; }
+  button:hover { background: var(--border); }
+  .btn-primary { background: var(--amber); color: #000; border-color: var(--amber); font-weight: 600; }
+  .btn-primary:hover { background: #e09000; border-color: #e09000; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-ghost { background: none; border-color: transparent; color: var(--text2); }
+  .btn-ghost:hover { background: var(--bg3); color: var(--text); }
+
+  .hint { font-size: 11px; color: var(--text3); margin-top: 6px; }
+
+  /* Stats */
+  .stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 20px; }
+  .stat { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; text-align: center; }
+  .stat-num { font-size: 24px; font-weight: 600; }
+  .stat-lbl { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .s-total .stat-num { color: var(--text); }
+  .s-pending .stat-num { color: var(--text2); }
+  .s-waiting .stat-num { color: var(--blue); }
+  .s-done .stat-num { color: var(--amber); }
+  .s-organized .stat-num { color: var(--green); }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .b-pending { background: var(--gray-bg); color: var(--text2); }
+  .b-waiting { background: var(--blue-bg); color: var(--blue); }
+  .b-done { background: var(--amber-bg); color: var(--amber); }
+  .b-organized { background: var(--green-bg); color: var(--green); }
+
+  /* Filter bar */
+  .filter-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .filter-bar select { width: auto; min-width: 160px; }
+  .filter-bar input { flex: 1; min-width: 180px; }
+  .filter-bar .ml { margin-left: auto; display: flex; gap: 6px; }
+
+  /* Filtro por categoria de sugestão (estilo Notion) */
+  .filtro-cat-wrap { position: relative; }
+  .btn-filtro-cat { display: flex; align-items: center; gap: 7px; padding: 8px 14px; font-size: 13px; border-radius: var(--radius); border: 1px solid var(--border2); background: var(--bg3); color: var(--text2); cursor: pointer; white-space: nowrap; }
+  .btn-filtro-cat:hover { background: var(--border); color: var(--text); }
+  .btn-filtro-cat.active { border-color: var(--amber); color: var(--amber); }
+  .btn-filtro-cat svg { width: 13px; height: 13px; flex-shrink: 0; }
+  .filtro-cat-badge { display: none; background: var(--amber); color: #000; font-size: 10px; font-weight: 700; line-height: 1; padding: 3px 6px; border-radius: 10px; }
+  .filtro-cat-dropdown { display: none; position: absolute; top: calc(100% + 6px); left: 0; right: auto; text-align: left; min-width: 230px; max-width: 280px; background: #1a1a1a; border: 1px solid var(--border2); border-radius: var(--radius); box-shadow: 0 10px 30px rgba(0,0,0,0.55); padding: 6px; z-index: 300; }
+  .filtro-cat-dropdown.open { display: block; }
+  .filtro-cat-hdr { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 8px 8px; text-align: left; }
+  .filtro-cat-item { display: flex; align-items: center; justify-content: flex-start; gap: 9px; padding: 7px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--text); user-select: none; text-align: left; }
+  .filtro-cat-item:hover { background: var(--bg3); }
+  .filtro-cat-item input { cursor: pointer; accent-color: var(--amber); width: 14px; height: 14px; flex-shrink: 0; margin: 0; order: 0; }
+  .filtro-cat-item span.filtro-cat-lbl { flex: 1; text-align: left; order: 1; }
+  .filtro-cat-count { font-size: 11px; color: var(--text3); order: 2; margin-left: auto; }
+  .filtro-cat-empty { padding: 10px 8px; font-size: 12px; color: var(--text3); font-style: italic; max-width: 210px; }
+  .filtro-cat-footer { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 6px; display: flex; justify-content: flex-end; }
+  .filtro-cat-clear { font-size: 12px; color: var(--text3); background: none; border: none; cursor: pointer; padding: 4px 6px; }
+  .filtro-cat-clear:hover { color: var(--text); text-decoration: underline; }
+
+  /* Filtro roxo de Status IA (Gerando imagem / Gerando vídeo) — mesmo padrão do filtro de Sugestão */
+  .btn-filtro-ia.active { border-color: var(--purple); color: var(--purple); }
+  .filtro-ia-badge { display: none; background: var(--purple); color: #000; font-size: 10px; font-weight: 700; line-height: 1; padding: 3px 6px; border-radius: 10px; }
+  .filtro-ia-dropdown { display: none; position: absolute; top: calc(100% + 6px); left: 0; right: auto; text-align: left; min-width: 200px; background: #1a1a1a; border: 1px solid var(--border2); border-radius: var(--radius); box-shadow: 0 10px 30px rgba(0,0,0,0.55); padding: 6px; z-index: 300; }
+  .filtro-ia-dropdown.open { display: block; }
+  .filtro-ia-item input { accent-color: var(--purple); }
+
+  /* Botão separado "Gerar vídeo" em verde-limão — mesma cor do badge ⭐ GERAR VÍDEO */
+  .btn-gerar-video { border-color: #5c8a00; color: var(--lime); background: var(--bg3); }
+  .btn-gerar-video:hover { background: var(--lime-bg); }
+  .btn-gerar-video.active { background: var(--lime-bg); border-color: var(--lime); color: var(--lime); }
+
+  /* Parts table */
+  .parts-table { width: 100%; border-collapse: collapse; }
+  .parts-table th { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 500; padding: 6px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+  .parts-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .parts-table tr:last-child td { border-bottom: none; }
+  .parts-table tr:hover td { background: var(--bg3); }
+  .col-num { width: 48px; color: var(--text3); font-size: 12px; font-family: monospace; }
+  .col-desc { min-width: 200px; }
+  .col-folder { min-width: 140px; }
+  .col-link { min-width: 200px; }
+  .col-action { width: 180px; }
+  .action-cell { display: flex; gap: 5px; align-items: flex-start; }
+  .status-select { font-size: 12px; padding: 5px 8px; flex: 1; cursor: pointer; border-radius: 6px; border: 1px solid #3d3d3d; background: #242424; color: #e8e8e8; font-family: inherit; }
+  .status-select:focus { outline: none; border-color: #f5a623; }
+  .btn-advance { padding: 5px 9px; font-size: 13px; border-radius: 6px; border: 1px solid #3d3d3d; background: #242424; color: #e8e8e8; cursor: pointer; flex-shrink: 0; line-height: 1; }
+  .btn-advance:hover { background: #f5a623; color: #000; border-color: #f5a623; }
+  .btn-ia-quick { padding: 5px 10px; font-size: 11px; border-radius: 6px; border: 1px solid #7c3aed; background: #1a0a2e; color: #c084fc; cursor: pointer; flex-shrink: 0; white-space: nowrap; line-height: 1.3; }
+  .btn-ia-quick:hover { background: #7c3aed; color: #fff; }
+  .btn-done-quick { padding: 5px 10px; font-size: 11px; border-radius: 6px; border: 1px solid #1a3a1a; background: #0a1f0a; color: #4caf50; cursor: pointer; flex-shrink: 0; white-space: nowrap; line-height: 1.3; }
+  .btn-done-quick:hover { background: #4caf50; color: #000; }
+  .ia-substatus { font-size: 11px; padding: 4px 7px; margin-top: 5px; width: 100%; cursor: pointer; border-radius: 6px; border: 1px solid #7c3aed; background: #1a0a2e; color: #c084fc; font-family: inherit; }
+  .ia-substatus:focus { outline: none; border-color: #c084fc; }
+  .b-ia { background: #1a0a2e; color: #c084fc; }
+  .b-texto { background: #1a2a2e; color: #4dd0e1; }
+  .chk-texto { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text3); cursor: pointer; margin-bottom: 6px; user-select: none; white-space: nowrap; }
+  .chk-texto input { cursor: pointer; accent-color: #4dd0e1; width: 13px; height: 13px; flex-shrink: 0; }
+  .chk-texto:hover { color: var(--text2); }
+  .texto-only-note { font-size: 12px; color: var(--text3); font-style: italic; }
+  .alt-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; background: var(--amber-bg); color: var(--amber); padding: 2px 8px; border-radius: 10px; margin-left: 6px; white-space: nowrap; }
+  .dur-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-left: 6px; white-space: nowrap; letter-spacing: 0.02em; }
+  .dur-badge .dur-sec { opacity: 0.75; font-weight: 500; }
+  .dur-img { background: #2a2a2a; color: #9a9a9a; border: 1px solid #3d3d3d; }
+  .dur-video { background: #1b2e00; color: #b6ff00; border: 1px solid #5c8a00; }
+  .opcoes-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .opcao-chip { display: inline-flex; align-items: center; gap: 5px; max-width: 80%; box-sizing: border-box; background: var(--bg3); border: 1px solid var(--border2); border-radius: 14px; padding: 3px 6px 3px 4px; font-size: 11px; color: var(--text2); line-height: 1.4; }
+  .opcao-tipo { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text3); background: var(--bg); padding: 2px 6px; border-radius: 8px; white-space: nowrap; }
+  .opcao-texto { cursor: pointer; word-break: break-word; min-width: 0; }
+  .opcao-texto:hover { color: var(--text); text-decoration: underline; }
+  .opcao-copy { cursor: pointer; opacity: 0.55; padding: 0 2px; font-size: 11px; }
+  .opcao-copy:hover { opacity: 1; }
+  .opcao-chip.rec { border-color: var(--amber); background: var(--amber-bg); }
+  .opcao-chip.rec .opcao-tipo { color: var(--amber); background: rgba(245,166,35,0.18); }
+  .opcao-chip.rec .opcao-texto { color: #f0d9a8; }
+  .opcao-star { color: var(--amber); font-size: 10px; }
+  #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--bg3); border: 1px solid var(--border2); border-radius: 20px; padding: 8px 16px; font-size: 12px; color: var(--text); z-index: 9999; opacity: 0; transition: opacity 0.25s; pointer-events: none; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+  .folder-name { font-size: 11px; color: var(--text3); font-family: 'Courier New', monospace; word-break: break-all; }
+  .desc-text { font-size: 13px; }
+  .link-cell input { font-size: 11px; padding: 4px 8px; width: 100%; }
+  .link-cell a { font-size: 11px; color: var(--blue); text-decoration: none; word-break: break-all; }
+  .link-cell a:hover { text-decoration: underline; }
+
+  /* Empty */
+  .empty { text-align: center; padding: 48px 24px; color: var(--text3); }
+  .empty p { font-size: 13px; margin-top: 8px; }
+
+  /* Script output */
+  .code-box { background: #0a0a0a; border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; font-family: 'Courier New', monospace; font-size: 12px; color: #c8c8c8; white-space: pre; overflow: auto; max-height: 320px; margin-top: 12px; }
+  .code-header { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
+
+  /* Progress bar */
+  .progress-wrap { background: var(--bg3); border-radius: 4px; height: 6px; margin-top: 8px; overflow: hidden; }
+  .progress-bar { height: 100%; background: var(--amber); border-radius: 4px; transition: width 0.3s; }
+
+  /* Notice */
+  .notice { background: var(--blue-bg); border: 1px solid #1a3a5c; border-radius: var(--radius); padding: 10px 14px; font-size: 12px; color: #7ab8ff; margin-bottom: 16px; }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .stat-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  /* Save indicator */
+  #save-indicator { font-size: 11px; color: var(--green); opacity: 0; transition: opacity 0.3s; }
+
+  /* Fixed footer save bar */
+  .save-footer { position: fixed; bottom: 20px; right: 24px; left: auto; background: #0a0a0a; border: 1px solid #1e1e1e; border-radius: 10px; padding: 10px 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 12px; z-index: 100; }
+  .save-footer-spacer { height: 0; }
+  .btn-save-footer { padding: 8px 20px; font-size: 13px; font-weight: 500; border-radius: 6px; border: 1px solid #2e2e2e; background: #141414; color: #888; cursor: pointer; letter-spacing: 0.02em; transition: background 0.2s, color 0.2s, border-color 0.2s; }
+  .btn-save-footer:hover { background: #1e1e1e; color: #bbb; border-color: #3d3d3d; }
+  .btn-save-footer.shake { animation: footerShake 0.5s ease; background: #1f1200; color: #f5a623; border-color: #6b3a00; }
+  .btn-backup-footer { padding: 8px 20px; font-size: 13px; font-weight: 500; border-radius: 6px; border: 1px solid #2e2e2e; background: #141414; color: #888; cursor: pointer; letter-spacing: 0.02em; transition: background 0.2s, color 0.2s, border-color 0.2s; }
+  .btn-backup-footer:hover { background: #1e1e1e; color: #bbb; border-color: #3d3d3d; }
+  .btn-backup-footer.shake { animation: footerShake 0.5s ease; background: #1f1200; color: #f5a623; border-color: #6b3a00; }
+  .footer-saved-at { font-size: 11px; color: #444; margin-left: 4px; }
+
+  /* Bolha separada do rodapé para o prompt de vídeo IA */
+  .video-ia-footer { position: fixed; bottom: 72px; right: 24px; left: auto; background: #0a0a0a; border: 1px solid #1e1e1e; border-radius: 10px; padding: 10px 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 12px; z-index: 100; }
+  .btn-video-ia-footer { padding: 8px 20px; font-size: 13px; font-weight: 500; border-radius: 6px; border: 1px solid #2e2e2e; background: #141414; color: #888; cursor: pointer; letter-spacing: 0.02em; transition: background 0.2s, color 0.2s, border-color 0.2s; }
+  .btn-video-ia-footer:hover { background: #1e1e1e; color: #bbb; border-color: #3d3d3d; }
+  .btn-video-ia-footer.shake { animation: footerShake 0.5s ease; background: #1f1200; color: #f5a623; border-color: #6b3a00; }
+  @keyframes footerShake {
+    0%   { transform: translateX(0); }
+    15%  { transform: translateX(-5px); }
+    30%  { transform: translateX(5px); }
+    45%  { transform: translateX(-4px); }
+    60%  { transform: translateX(4px); }
+    75%  { transform: translateX(-2px); }
+    90%  { transform: translateX(2px); }
+    100% { transform: translateX(0); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div style="flex:1;">
+    <h1>🎬 Painel de Produção <span id="version-display" style="font-size:0.55em;font-weight:400;color:var(--text3);opacity:0.7;vertical-align:middle;margin-left:8px;"></span></h1>
+  </div>
+  <span id="projeto-display">Nenhum projeto</span>
+  <span id="save-indicator">✓ Salvo</span>
+</header>
+
+<div class="main">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('importar', this)">Importar roteiro</button>
+    <button class="tab" onclick="switchTab('partes', this)">Rastrear partes <span id="badge-count" style="color:var(--text3)"></span></button>
+    <button class="tab" onclick="switchTab('pastas', this)">Script de pastas</button>
+    <button class="tab" onclick="switchTab('sobre', this)">Como usar</button>
+    <button class="tab" onclick="switchTab('atualizacoes', this)">🔄 Atualizações</button>
+  </div>
+
+  <!-- IMPORTAR -->
+  <div id="panel-importar" class="panel active">
+    <div class="card">
+      <h2>Novo projeto</h2>
+      <div class="row" style="margin-bottom:12px;">
+        <div>
+          <label>Nome do projeto</label>
+          <input type="text" id="projeto-nome" placeholder="ex: EP03_DarkForest" />
+        </div>
+        <div>
+          <label>Número do episódio / série</label>
+          <input type="text" id="projeto-ep" placeholder="ex: EP03" />
+        </div>
+      </div>
+      <label>Conteúdo do roteiro — cole do Word ou Google Docs</label>
+      <textarea id="roteiro-input" placeholder="1. Floresta escura ao amanhecer&#10;2. Close de mãos segurando uma lanterna&#10;3. Câmera lenta de chuva batendo em janela&#10;...&#10;&#10;Formatos aceitos: 1. Texto | [1] Texto | Parte 1 - Texto"></textarea>
+      <p class="hint">Cada linha numerada vira uma parte rastreável com pasta própria.</p>
+      <div class="row" style="margin-top:14px;">
+        <button class="btn-primary" onclick="importarRoteiro()">⬆ Importar partes</button>
+        <button onclick="carregarExemplo()">Ver exemplo</button>
+        <button onclick="limparTudo()" style="color:var(--text3);">✕ Limpar tudo</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Restaurar backup JSON</h2>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">Carregue um arquivo <code>.json</code> gerado pelo botão "Backup JSON" para restaurar um projeto completo — com todos os links, status e etapas de IA.</p>
+      <label for="json-file-input" class="btn" style="display:inline-block;cursor:pointer;font-size:13px;padding:8px 16px;border:1px solid var(--border2);border-radius:6px;background:var(--bg3);color:var(--text);">Escolher arquivo .json</label>
+      <input type="file" id="json-file-input" accept=".json" style="display:none;" onchange="importarJSON(this.files[0])" />
+      <span id="json-file-name" style="font-size:12px;color:var(--text3);margin-left:10px;"></span>
+    </div>
+
+    <div class="card" id="card-projetos-salvos" style="display:none;">
+      <h2>Projetos salvos neste computador</h2>
+      <div id="lista-projetos"></div>
+    </div>
+  </div>
+
+  <!-- PARTES -->
+  <div id="panel-partes" class="panel">
+    <div class="stat-grid" style="grid-template-columns:repeat(6,1fr);">
+      <div class="stat s-total"><div class="stat-num" id="st-total">0</div><div class="stat-lbl">Total</div></div>
+      <div class="stat s-pending"><div class="stat-num" id="st-pending">0</div><div class="stat-lbl">Sem busca</div></div>
+      <div class="stat" style="border-color:#7c3aed33;"><div class="stat-num" id="st-ia" style="color:#c084fc;">0</div><div class="stat-lbl">Gerando IA</div></div>
+      <div class="stat s-waiting"><div class="stat-num" id="st-waiting">0</div><div class="stat-lbl">Aguardando dl</div></div>
+      <div class="stat s-organized"><div class="stat-num" id="st-organized">0</div><div class="stat-lbl">Baixado</div></div>
+      <div class="stat" style="border-color:#4dd0e133;"><div class="stat-num" id="st-texto" style="color:#4dd0e1;">0</div><div class="stat-lbl">TÍTULO / TEXTO</div></div>
+    </div>
+
+    <div class="progress-wrap" style="margin-bottom:20px;">
+      <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+    </div>
+
+    <div class="notice" id="notice-waiting" style="display:none;">
+      📥 Há partes aguardando download. Filtre por "Aguardando download" para ver só elas. Use o filtro "Gerando IA" para acompanhar as gerações em andamento.
+    </div>
+
+    <div class="filter-bar">
+      <select id="filtro" onchange="renderPartes()">
+        <option value="all">Todas as partes</option>
+        <option value="pending">Sem busca</option>
+        <option value="ia">Gerando IA</option>
+      <option value="waiting">Aguardando download</option>
+        <option value="organized">Baixado</option>
+        <option value="texto">TÍTULO / TEXTO (sem mídia)</option>
+      </select>
+
+      <div class="filtro-cat-wrap">
+        <button type="button" class="btn-filtro-cat" id="btn-filtro-cat" onclick="toggleFiltroCatDropdown(event)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 4 20 4 14 12.5 14 19 10 21 10 12.5 4 4"></polygon></svg>
+          <span>Sugestão</span>
+          <span class="filtro-cat-badge" id="filtro-cat-badge">0</span>
+        </button>
+        <div class="filtro-cat-dropdown" id="filtro-cat-dropdown"></div>
+      </div>
+
+      <div class="filtro-cat-wrap">
+        <button type="button" class="btn-filtro-cat btn-filtro-ia" id="btn-filtro-ia" onclick="toggleFiltroIADropdown(event)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg>
+          <span>Status IA</span>
+          <span class="filtro-ia-badge" id="filtro-ia-badge">0</span>
+        </button>
+        <div class="filtro-ia-dropdown" id="filtro-ia-dropdown"></div>
+      </div>
+
+      <button type="button" class="btn-gerar-video" id="btn-gerar-video" onclick="toggleGerarVideoFiltro()" title="Mostrar só as partes com sugestão ⭐ GERAR VÍDEO (trecho longo o bastante para compensar animar)">
+        ⭐ Gerar vídeo
+      </button>
+
+      <input type="text" id="busca" placeholder="Buscar por descrição..." oninput="renderPartes()" style="flex:1;min-width:140px;" />
+      <div class="ml">
+        <button class="btn-sm" onclick="exportarJSON()">Exportar JSON</button>
+        <button class="btn-sm btn-primary" onclick="salvarLocalmente()">💾 Salvar</button>
+      </div>
+    </div>
+
+    <div class="card" style="padding:0;overflow:auto;">
+      <table class="parts-table">
+        <thead>
+          <tr>
+            <th class="col-num">#</th>
+            <th class="col-desc">Descrição</th>
+          </tr>
+        </thead>
+        <tbody id="parts-list"></tbody>
+      </table>
+      <div id="empty-state" class="empty">
+        <div style="font-size:32px;">📋</div>
+        <p>Importe um roteiro para começar a rastrear as partes.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASTAS -->
+  <div id="panel-pastas" class="panel">
+    <div class="card">
+      <h2>Configurar estrutura de pastas</h2>
+      <div class="notice" style="margin-bottom:16px;">
+        💡 <strong style="color:#7ab8ff;">Como escrever o caminho corretamente:</strong>
+        <ul style="margin:8px 0 4px 18px; padding:0; line-height:1.7;">
+          <li>Use o formato completo do Windows, com letra da unidade: <code>C:\Projetos\MeuCanal\EP03</code></li>
+          <li><strong>Evite espaços</strong> no nome das pastas do caminho (ex: use <code>pastas_video_5</code> em vez de <code>pastas video 5</code>). O script já coloca aspas automaticamente, mas nomes sem espaço são mais seguros de digitar, copiar e usar depois em outros programas.</li>
+          <li>Evite também acentos e caracteres especiais (ç, ã, /, :, *, ?, ", &lt;, &gt;, |) — eles podem causar erro na hora de criar a pasta.</li>
+          <li>Use barra invertida <code>\</code> (não <code>/</code>) para separar as pastas — é o padrão do Windows.</li>
+          <li>Não é preciso a pasta já existir: o <code>.bat</code> cria toda a estrutura, inclusive pastas intermediárias que ainda não existem.</li>
+        </ul>
+      </div>
+      <div class="row" style="margin-bottom:12px;">
+        <div style="flex:2;">
+          <label>Caminho base no Windows</label>
+          <input type="text" id="path-base" placeholder="C:\Projetos\MeuCanal\EP03" />
+        </div>
+      </div>
+      <label>Subpastas dentro de cada parte (opcional — deixe em branco para não criar)</label>
+      <div class="row" style="margin-bottom:12px;">
+        <input type="text" id="sub1" placeholder="Videos" />
+        <input type="text" id="sub2" placeholder="Fotos" />
+        <input type="text" id="sub3" placeholder="Audio" />
+        <input type="text" id="sub4" placeholder="Extras" />
+      </div>
+      <button class="btn-primary" onclick="gerarScript()">📁 Gerar script .bat</button>
+    </div>
+
+    <div id="script-output" style="display:none;">
+      <div class="code-header">
+        <span style="font-size:13px;font-weight:600;">Script gerado — <span id="script-count"></span> pastas</span>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-sm" onclick="copiarScript()">📋 Copiar</button>
+          <button class="btn-sm btn-primary" onclick="baixarScript()">⬇ Baixar .bat</button>
+        </div>
+      </div>
+      <div class="code-box" id="script-content"></div>
+      <div class="notice" style="margin-top:12px;">
+        💡 Salve o arquivo como <strong>criar_pastas.bat</strong>, clique com botão direito → "Executar como administrador". As pastas serão criadas instantaneamente.
+      </div>
+    </div>
+  </div>
+
+  <!-- SOBRE -->
+  <div id="panel-sobre" class="panel">
+    <div class="card">
+      <h2>Fluxo de trabalho recomendado</h2>
+      <ol style="padding-left:20px;line-height:2.2;font-size:13px;color:var(--text2);">
+        <li><strong style="color:var(--text);">Importe o roteiro</strong> — Cole o texto numerado do Word/Google Docs na aba "Importar roteiro". Cada item numerado vira uma parte.</li>
+        <li><strong style="color:var(--text);">Gere as pastas</strong> — Na aba "Script de pastas", configure o caminho e baixe o <code>.bat</code>. Execute uma vez — todas as pastas são criadas com o mesmo nome que aparece no painel.</li>
+        <li><strong style="color:var(--text);">Busque os materiais</strong> — Abra o Envato/Storyblocks, encontre o vídeo/foto para cada parte. Cole o link na coluna "Link do material" da respectiva parte.</li>
+        <li><strong style="color:var(--text);">Marque como "Aguardando download"</strong> — Ao colar o link, o status muda automaticamente. Agora você pode continuar buscando outros materiais.</li>
+        <li><strong style="color:var(--text);">Volte para baixar</strong> — Filtre por "Aguardando download". Veja exatamente quais precisam ser baixados e para qual pasta cada um vai.</li>
+        <li><strong style="color:var(--text);">Avance o status</strong> — Após baixar e organizar na pasta, clique "→" ou use o dropdown para marcar como "Baixado".</li>
+        <li><strong style="color:var(--text);">Salve o progresso</strong> — Clique em "💾 Salvar" a qualquer momento. O arquivo HTML salva os dados localmente no seu navegador.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h2>Dicas</h2>
+      <ul style="padding-left:20px;line-height:2.2;font-size:13px;color:var(--text2);">
+        <li>Os nomes das pastas são gerados automaticamente no formato <code>001_Nome_da_parte</code> — igual no painel e no Windows.</li>
+        <li>Use "Exportar CSV" para ter uma planilha com todo o histórico do projeto.</li>
+        <li>Você pode importar vários roteiros e salvar projetos diferentes — o painel guarda o estado no navegador.</li>
+        <li>Funciona offline — não precisa de internet depois de abrir o arquivo.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ATUALIZAÇÕES / PATCHES -->
+  <div id="panel-atualizacoes" class="panel">
+    <div class="card">
+      <h2>📦 Versão</h2>
+      <div style="font-size:13px;line-height:1.8;color:var(--text2);">
+        <p><strong>Versão atual do arquivo:</strong> <span id="patch-versao-atual">—</span></p>
+        <p><strong>Última atualização por patch:</strong> <span id="patch-ultima-data">—</span></p>
+      </div>
+      <div id="patch-historico" style="margin-top:12px;"></div>
+    </div>
+
+    <div class="card">
+      <h2>🔄 Aplicar patch</h2>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:12px;">
+        Carregue um arquivo JSON de patch pra atualizar detalhes deste painel (cores, textos, pequenos ajustes) sem precisar baixar um HTML novo. Isso não mexe nos seus projetos/dados — só no visual/comportamento do painel.
+      </p>
+      <div class="row">
+        <input type="file" id="patch-file" accept=".json" style="padding:8px 12px;cursor:pointer;">
+        <button class="btn-primary" onclick="carregarPatch()">Carregar patch</button>
+      </div>
+      <div id="patch-status" style="font-size:12px;color:var(--text3);margin-top:8px;"></div>
+      <div id="patch-preview" style="display:none;margin-top:14px;padding:14px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg3);">
+        <div id="patch-preview-info" style="font-size:13px;color:var(--text);margin-bottom:10px;"></div>
+        <div class="row">
+          <button class="btn-primary" onclick="aplicarPatch()">✓ Aplicar atualização</button>
+          <button class="btn-ghost" onclick="descartarPatch()">Descartar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== VERSÃO DO ARQUIVO =====
+// IMPORTANTE PARA IAs/CHATS FUTUROS QUE EDITAREM ESTE ARQUIVO:
+// Sempre que este arquivo (painel_producao_vXX.html) for lido e modificado:
+//   1. Identifique a versão atual pelo NOME DO ARQUIVO enviado (ex: painel_producao_v17.html = v17),
+//      não confie apenas na constante abaixo, pois o nome do arquivo é a fonte da verdade.
+//   2. Incremente em +1 (ex: v17 -> v18) e atualize os TRÊS lugares a seguir, sempre em conjunto:
+//        a) a constante APP_VERSION logo abaixo;
+//        b) a tag <title> no <head> do documento (ex: "Painel de Produção v18 — Dark Channel");
+//        c) o nome do arquivo salvo/exportado (ex: painel_producao_v18.html).
+//   3. Esse valor é exibido automaticamente ao lado do título "Painel de Produção" no topo da tela.
+const APP_VERSION = 'v29';
+
+// Sugestão automática de prompt para vídeo IA (aparece sempre que houver opção do tipo Geração/IA,
+// mesmo que essa frase não venha nos itens colados pelo usuário).
+const FRASE_VIDEO_IA = "Single continuous take, strictly NO cuts, NO scene changes, NO morphing. Slow and smooth cinematic camera zoom in. Maintain the exact original composition and subjects for the entire duration. Subtle ambient motion only.";
+
+// ===== Estimativa de duração de tela (com base na frase do roteiro) =====
+// Usa uma cadência média de narração (~2,5 palavras/seg ≈ 150 palavras/min) para estimar
+// quantos segundos aquele trecho ficará na tela, e sugere se compensa gerar vídeo ou não.
+const PALAVRAS_POR_SEGUNDO = 2.5;
+const LIMITE_SO_IMAGEM = 2;   // abaixo disso: não compensa animar, só imagem
+const LIMITE_GERAR_VIDEO = 3; // acima disso: autoriza gerar vídeo
+
+function estimarDuracaoSegundos(desc) {
+  if (!desc) return 0;
+  const palavras = desc.trim().split(/\s+/).filter(Boolean).length;
+  return palavras / PALAVRAS_POR_SEGUNDO;
+}
+
+function badgeDuracao(desc, mostrarGerarVideo) {
+  const seg = estimarDuracaoSegundos(desc);
+  const segTxt = `~${seg.toFixed(1)}s`;
+  if (seg < LIMITE_SO_IMAGEM) {
+    return `<span class="dur-badge dur-img" title="Trecho curto (${segTxt} de tela estimados) — geralmente não compensa gerar animação">🖼️ SÓ IMAGEM <span class="dur-sec">${segTxt}</span></span>`;
+  }
+  if (seg > LIMITE_GERAR_VIDEO && mostrarGerarVideo) {
+    return `<span class="dur-badge dur-video" title="Trecho longo (${segTxt} de tela estimados) — compensa gerar vídeo/animação">⭐ GERAR VÍDEO <span class="dur-sec">${segTxt}</span></span>`;
+  }
+  return ''; // zona intermediária (2s–3s): ambíguo, sem recomendação automática
+}
+
+let partes = [];
+let projetoAtual = '';
+
+document.addEventListener('DOMContentLoaded', () => {
+  const vEl = document.getElementById('version-display');
+  if (vEl) vEl.textContent = APP_VERSION;
+});
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+  if (name === 'partes') renderPartes();
+  if (name === 'importar') carregarListaProjetos();
+  if (name === 'atualizacoes') renderHistoricoPatches();
+}
+
+function nomePasta(id, desc) {
+  let limpo = desc
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9\s]/g, '')
+    .trim()
+    .replace(/\s+/g, '_')
+    .substring(0, 40);
+  // Evita cortar no meio de uma palavra: remove o pedaco de palavra incompleto no final
+  limpo = limpo.replace(/_[^_]*$/, '');
+  return String(id).padStart(3, '0') + '_' + limpo;
+}
+
+function carregarExemplo() {
+  document.getElementById('roteiro-input').value =
+`1. Floresta escura ao amanhecer, névoa rasteira no chão
+2. Close de mãos segurando uma lanterna tremendo
+3. Câmera lenta de chuva batendo em janela suja
+4. Corredor abandonado com luz piscando no teto
+5. Silhueta de figura parada no fim do corredor
+6. Close de rosto assustado, olhos arregalados no escuro
+7. Porta rangendo se abrindo devagar sozinha
+8. Escada em espiral descendo para total escuridão
+9. Mapa antigo com marcações em tinta vermelha
+10. Relógio parado nas 3:00 em close`;
+  document.getElementById('projeto-nome').value = 'EP01_Dark_Sample';
+}
+
+// Detecta itens do tipo "Título": vêm sem conteúdo de mídia, apenas com a
+// palavra "TÍTULO" (com ou sem acento, maiúsculas/minúsculas) marcando o item.
+// Esses itens são jogados automaticamente para a categoria "TÍTULO / TEXTO".
+function ehTitulo(desc) {
+  if (!desc) return false;
+  const normalizado = desc
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toUpperCase();
+  return normalizado === 'TITULO' || /^TITULO\b[:\-\s]*$/.test(normalizado);
+}
+
+// Agrupa "Geração" e "IA" na mesma categoria (ambas são opções de conteúdo gerado por IA),
+// e normaliza acentos/maiúsculas para comparar tipos de opção com segurança.
+function tipoCanonico(s) {
+  const n = (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  if (n.includes('stock')) return 'stock';
+  if (n.includes('youtube')) return 'youtube';
+  if (n.includes('gera') || n === 'ia') return 'ia';
+  return n;
+}
+
+function importarRoteiro() {
+  const texto = document.getElementById('roteiro-input').value.trim();
+  projetoAtual = document.getElementById('projeto-nome').value.trim() || 'Projeto_Sem_Nome';
+  if (!texto) { alert('Cole o conteúdo do roteiro antes de importar.'); return; }
+
+  const saved = {};
+  partes.forEach(p => { saved[p.id] = { link: p.link, status: p.status, obs: p.obs, paraTexto: p.paraTexto }; });
+
+  // Parse formato avançado:
+  // "1 - Texto da parte\n[ Melhor alternativa: STOCK ]\n* Opção 1 Stock: keywords\n* Opção 2..."
+  const blocos = [];
+  let blocoAtual = null;
+  const linhas = texto.split('\n');
+
+  for (const linha of linhas) {
+    const l = linha.trim();
+    if (!l) continue;
+
+    // Detecta cabeçalho de parte: "1 - Texto", "1. Texto", "[1] Texto" ou "1.2 - Texto" (item secundário)
+    const matchCab = l.match(/^[\[\(]?(\d+(?:\.\d+)?)[\]\)\.\-\s]+(.+)/);
+    if (matchCab && !l.startsWith('*') && !l.startsWith('[')) {
+      // Verifica se a linha seguinte não é uma opção (evita falso positivo)
+      let desc = matchCab[2].trim();
+      let melhorAlternativa = '';
+      // Caso "[ Melhor alternativa: ... ]" venha na MESMA linha do título, separa daqui
+      const altInline = desc.match(/\[?\s*Melhor alternativa[:\s]+([^\]]+)\]?\s*$/i);
+      if (altInline) {
+        melhorAlternativa = altInline[1].trim();
+        desc = desc.slice(0, altInline.index).trim();
+      }
+      blocoAtual = {
+        num: parseFloat(matchCab[1]),
+        desc: desc,
+        melhorAlternativa: melhorAlternativa,
+        opcoes: [],
+        isTitulo: ehTitulo(desc)
+      };
+      blocos.push(blocoAtual);
+      continue;
+    }
+
+    if (!blocoAtual) continue;
+
+    // Detecta "[ Melhor alternativa: STOCK ]" ou "[ Melhor alternativa: IA ]"
+    const matchAlt = l.match(/\[?\s*Melhor alternativa[:\s]+([^\]]+)\]?/i);
+    if (matchAlt) {
+      blocoAtual.melhorAlternativa = matchAlt[1].trim();
+      continue;
+    }
+
+    // Detecta opções: "* Opção 1 Stock: keywords", "- Opção 2 YouTube: ..." ou sem marcador "Opção 3 YouTube: ..."
+    // (o Notion costuma remover o marcador * ou - ao colar, então ele é opcional aqui)
+    const matchOpc = l.match(/^(?:[\*\-]\s+)?Opção\s+(\d+)\s+(Stock|YouTube|Geração|IA|GERAÇÃO)[:\s]+(.+)/i);
+    if (matchOpc) {
+      blocoAtual.opcoes.push({
+        num: parseInt(matchOpc[1]),
+        tipo: matchOpc[2].trim(),
+        keyword: matchOpc[3].trim()
+      });
+    }
+  }
+
+  // Se não encontrou blocos no formato novo, tenta formato simples
+  if (blocos.length === 0) {
+    linhas.filter(l => l.trim()).forEach((linha, i) => {
+      const m = linha.match(/^[\[\(]?(\d+(?:\.\d+)?)[\]\)\.\-\s]+(.+)/);
+      const num = m ? parseFloat(m[1]) : i + 1;
+      const desc = m ? m[2].trim() : linha.trim();
+      blocos.push({ num, desc, melhorAlternativa: '', opcoes: [], isTitulo: ehTitulo(desc) });
+    });
+  }
+
+  partes = blocos.map(b => {
+    const prev = saved[b.num] || {};
+    // Keyword padrão: a opção 1, ou a melhorAlternativa se houver
+    const opcaoPadrao = b.opcoes.find(o => o.num === 1);
+    const keyword = opcaoPadrao ? opcaoPadrao.keyword : b.desc;
+    return {
+      id: b.num,
+      desc: b.desc,
+      melhorAlternativa: b.melhorAlternativa,
+      opcoes: b.opcoes,
+      keyword,
+      status: prev.status || 'pending',
+      link: prev.link || '',
+      obs: prev.obs || '',
+      // Itens de título são jogados automaticamente para "TÍTULO / TEXTO",
+      // mesmo que o item já existisse antes com paraTexto desmarcado.
+      paraTexto: b.isTitulo ? true : (prev.paraTexto || false)
+    };
+  });
+
+  document.getElementById('projeto-display').textContent = projetoAtual;
+  document.title = `Painel — ${projetoAtual}`;
+  atualizarStats();
+  salvarLocalmente();
+  switchTab('partes', document.querySelectorAll('.tab')[1]);
+}
+
+function atualizarStats() {
+  const total = partes.length;
+  const pending = partes.filter(p => p.status === 'pending').length;
+  const waiting = partes.filter(p => p.status === 'waiting').length;
+  const organized = partes.filter(p => p.status === 'organized').length;
+  const ia = partes.filter(p => p.status === 'ia').length;
+  const texto = partes.filter(p => p.status === 'texto').length;
+  document.getElementById('st-total').textContent = total;
+  document.getElementById('st-pending').textContent = pending;
+  document.getElementById('st-ia').textContent = ia;
+  document.getElementById('st-waiting').textContent = waiting;
+  document.getElementById('st-organized').textContent = organized;
+  document.getElementById('st-texto').textContent = texto;
+  document.getElementById('badge-count').textContent = total ? `(${total})` : '';
+  // Partes "para texto" não precisam de mídia, então contam como concluídas na barra de progresso
+  const pct = total ? Math.round(((organized + texto) / total) * 100) : 0;
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('notice-waiting').style.display = waiting > 0 ? 'block' : 'none';
+}
+
+function statusBadge(s) {
+  const m = { pending: ['Sem busca','b-pending'], ia: ['Gerando IA','b-ia'], waiting: ['Aguardando dl','b-waiting'], organized: ['Baixado','b-organized'], texto: ['TÍTULO / TEXTO','b-texto'] };
+  return m[s] || ['',''];
+}
+
+function toggleParaTexto(id, checked) {
+  const p = partes.find(x => x.id === id);
+  if (!p) return;
+  p.paraTexto = checked;
+  if (checked) {
+    // Guarda o status anterior para poder restaurar se o editor desmarcar de novo
+    p.statusAntesTexto = p.status;
+    p.status = 'texto';
+  } else {
+    p.status = p.statusAntesTexto || 'pending';
+  }
+  salvarLocalmente();
+  renderPartes();
+}
+
+function setStatus(id, val) {
+  const p = partes.find(x => x.id === id);
+  if (!p) return;
+  p.status = val;
+  if (val === 'ia' && !p.iaSubstatus) p.iaSubstatus = 'img';
+  salvarLocalmente();
+  renderPartes();
+}
+
+function setIaSubstatus(id, val) {
+  const p = partes.find(x => x.id === id);
+  if (p) { p.iaSubstatus = val; salvarLocalmente(); renderPartes(); }
+}
+
+function avancarStatus(id) {
+  const p = partes.find(x => x.id === id);
+  if (!p) return;
+  // IA substatus: imagem → vídeo before moving to next main status
+  if (p.status === 'ia' && (p.iaSubstatus || 'img') === 'img') {
+    p.iaSubstatus = 'vid'; salvarLocalmente(); renderPartes(); return;
+  }
+  // Itens de Geração de IA pulam "Aguardando download" e vão direto para "Baixado"
+  if (p.status === 'ia') {
+    p.status = 'organized';
+    salvarLocalmente();
+    renderPartes();
+    return;
+  }
+  const ordem = ['pending', 'ia', 'waiting', 'organized'];
+  const idx = ordem.indexOf(p.status);
+  let next = ordem[idx + 1] || 'pending';
+  p.status = next;
+  if (next === 'ia') p.iaSubstatus = 'img';
+  salvarLocalmente();
+  renderPartes();
+}
+
+// ===== Filtro por categoria de sugestão (Melhor alternativa) =====
+// Guarda os canônicos selecionados (ex: 'stock', 'youtube', 'ia'). Vazio = sem filtro.
+let filtroCategorias = new Set();
+
+function rotuloCategoria(canon, original) {
+  if (canon === 'stock') return 'Stock';
+  if (canon === 'youtube') return 'YouTube';
+  if (canon === 'ia') return 'Geração / IA';
+  return original || canon;
+}
+
+// Lê as partes atuais e monta o mapa canônico -> {label, count}, baseado
+// APENAS na "melhor alternativa" recomendada de cada parte (não nas opções soltas).
+function getCategoriasDisponiveis() {
+  const mapa = new Map();
+  partes.forEach(p => {
+    if (!p.melhorAlternativa) return;
+    const canon = tipoCanonico(p.melhorAlternativa);
+    if (!canon) return;
+    if (!mapa.has(canon)) mapa.set(canon, { label: rotuloCategoria(canon, p.melhorAlternativa), count: 0 });
+    mapa.get(canon).count++;
+  });
+  return mapa;
+}
+
+function toggleFiltroCatDropdown(ev) {
+  ev.stopPropagation();
+  const dd = document.getElementById('filtro-cat-dropdown');
+  if (dd.classList.contains('open')) { fecharFiltroCatDropdown(); return; }
+  renderFiltroCatDropdown();
+  dd.classList.add('open');
+  document.addEventListener('click', fecharFiltroCatDropdownFora);
+}
+
+function fecharFiltroCatDropdownFora(ev) {
+  const wrap = document.querySelector('.filtro-cat-wrap');
+  if (wrap && !wrap.contains(ev.target)) fecharFiltroCatDropdown();
+}
+
+function fecharFiltroCatDropdown() {
+  const dd = document.getElementById('filtro-cat-dropdown');
+  if (dd) dd.classList.remove('open');
+  document.removeEventListener('click', fecharFiltroCatDropdownFora);
+}
+
+function renderFiltroCatDropdown() {
+  const dd = document.getElementById('filtro-cat-dropdown');
+  const categorias = getCategoriasDisponiveis();
+  if (categorias.size === 0) {
+    dd.innerHTML = `<div class="filtro-cat-empty">Nenhuma parte tem "Melhor alternativa" definida ainda.</div>`;
+    return;
+  }
+  let html = `<div class="filtro-cat-hdr">Filtrar por sugestão</div>`;
+  categorias.forEach((info, canon) => {
+    const checked = filtroCategorias.has(canon) ? 'checked' : '';
+    html += `<label class="filtro-cat-item">
+      <input type="checkbox" ${checked} onchange="toggleCategoria('${canon}', this.checked)" />
+      <span class="filtro-cat-lbl">${info.label}</span>
+      <span class="filtro-cat-count">${info.count}</span>
+    </label>`;
+  });
+  html += `<div class="filtro-cat-footer"><button type="button" class="filtro-cat-clear" onclick="limparFiltroCategorias()">Limpar</button></div>`;
+  dd.innerHTML = html;
+}
+
+function toggleCategoria(canon, checked) {
+  if (checked) filtroCategorias.add(canon); else filtroCategorias.delete(canon);
+  atualizarBadgeFiltroCat();
+  renderPartes();
+}
+
+function limparFiltroCategorias() {
+  filtroCategorias.clear();
+  atualizarBadgeFiltroCat();
+  renderFiltroCatDropdown();
+  renderPartes();
+}
+
+function atualizarBadgeFiltroCat() {
+  const badge = document.getElementById('filtro-cat-badge');
+  const btn = document.getElementById('btn-filtro-cat');
+  if (!badge || !btn) return;
+  if (filtroCategorias.size > 0) {
+    badge.style.display = 'inline-block';
+    badge.textContent = filtroCategorias.size;
+    btn.classList.add('active');
+  } else {
+    badge.style.display = 'none';
+    btn.classList.remove('active');
+  }
+}
+
+// ===== Filtro roxo por Status IA (Gerando imagem / Gerando vídeo) =====
+// Guarda os substatus selecionados ('img', 'vid'). Vazio = sem filtro.
+let filtroIASubstatus = new Set();
+
+function getIASubstatusDisponiveis() {
+  const mapa = new Map([
+    ['img', { label: '🖼️ Gerando imagem', count: 0 }],
+    ['vid', { label: '🎬 Gerando vídeo', count: 0 }]
+  ]);
+  partes.forEach(p => {
+    if (p.status !== 'ia') return;
+    const sub = p.iaSubstatus || 'img';
+    if (mapa.has(sub)) mapa.get(sub).count++;
+  });
+  return mapa;
+}
+
+function toggleFiltroIADropdown(ev) {
+  ev.stopPropagation();
+  const dd = document.getElementById('filtro-ia-dropdown');
+  if (dd.classList.contains('open')) { fecharFiltroIADropdown(); return; }
+  renderFiltroIADropdown();
+  dd.classList.add('open');
+  document.addEventListener('click', fecharFiltroIADropdownFora);
+}
+
+function fecharFiltroIADropdownFora(ev) {
+  const wrap = document.getElementById('btn-filtro-ia').closest('.filtro-cat-wrap');
+  if (wrap && !wrap.contains(ev.target)) fecharFiltroIADropdown();
+}
+
+function fecharFiltroIADropdown() {
+  const dd = document.getElementById('filtro-ia-dropdown');
+  if (dd) dd.classList.remove('open');
+  document.removeEventListener('click', fecharFiltroIADropdownFora);
+}
+
+function renderFiltroIADropdown() {
+  const dd = document.getElementById('filtro-ia-dropdown');
+  const substatus = getIASubstatusDisponiveis();
+  let html = `<div class="filtro-cat-hdr">Filtrar por status de IA</div>`;
+  substatus.forEach((info, sub) => {
+    const checked = filtroIASubstatus.has(sub) ? 'checked' : '';
+    html += `<label class="filtro-cat-item filtro-ia-item">
+      <input type="checkbox" ${checked} onchange="toggleIASubstatus('${sub}', this.checked)" />
+      <span class="filtro-cat-lbl">${info.label}</span>
+      <span class="filtro-cat-count">${info.count}</span>
+    </label>`;
+  });
+  html += `<div class="filtro-cat-footer"><button type="button" class="filtro-cat-clear" onclick="limparFiltroIASubstatus()">Limpar</button></div>`;
+  dd.innerHTML = html;
+}
+
+function toggleIASubstatus(sub, checked) {
+  if (checked) filtroIASubstatus.add(sub); else filtroIASubstatus.delete(sub);
+  atualizarBadgeFiltroIA();
+  renderPartes();
+}
+
+function limparFiltroIASubstatus() {
+  filtroIASubstatus.clear();
+  atualizarBadgeFiltroIA();
+  renderFiltroIADropdown();
+  renderPartes();
+}
+
+function atualizarBadgeFiltroIA() {
+  const badge = document.getElementById('filtro-ia-badge');
+  const btn = document.getElementById('btn-filtro-ia');
+  if (!badge || !btn) return;
+  if (filtroIASubstatus.size > 0) {
+    badge.style.display = 'inline-block';
+    badge.textContent = filtroIASubstatus.size;
+    btn.classList.add('active');
+  } else {
+    badge.style.display = 'none';
+    btn.classList.remove('active');
+  }
+}
+
+// ===== Filtro verde-limão "Gerar vídeo" (reaproveita a mesma regra do badge ⭐ GERAR VÍDEO) =====
+let gerarVideoAtivo = false;
+
+function toggleGerarVideoFiltro() {
+  gerarVideoAtivo = !gerarVideoAtivo;
+  document.getElementById('btn-gerar-video').classList.toggle('active', gerarVideoAtivo);
+  renderPartes();
+}
+
+function renderPartes() {
+  const filtro = document.getElementById('filtro').value;
+  const busca = (document.getElementById('busca').value || '').toLowerCase();
+  const tbody = document.getElementById('parts-list');
+  const empty = document.getElementById('empty-state');
+
+  if (!partes.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  let lista = filtro === 'all' ? partes : partes.filter(p => p.status === filtro);
+  if (busca) lista = lista.filter(p => p.desc.toLowerCase().includes(busca));
+  if (filtroCategorias.size > 0) {
+    lista = lista.filter(p => p.melhorAlternativa && filtroCategorias.has(tipoCanonico(p.melhorAlternativa)));
+  }
+  if (filtroIASubstatus.size > 0) {
+    lista = lista.filter(p => p.status === 'ia' && filtroIASubstatus.has(p.iaSubstatus || 'img'));
+  }
+  if (gerarVideoAtivo) {
+    lista = lista.filter(p => estimarDuracaoSegundos(p.desc) > LIMITE_GERAR_VIDEO);
+  }
+
+  tbody.innerHTML = lista.map(p => {
+    const [lbl, cls] = statusBadge(p.status);
+    const linkHtml = p.paraTexto
+      ? `<span class="texto-only-note">— sem necessidade de mídia —</span>`
+      : (p.link
+        ? `<a href="${p.link}" target="_blank" title="${p.link}">${p.link.length > 30 ? p.link.substring(0,28)+'…' : p.link}</a><br><button class="btn-sm btn-ghost" onclick="setLink(${p.id},'')">✕ remover</button>`
+        : `<input type="text" placeholder="Cole o link do material..." value="" onchange="setLink(${p.id}, this.value)" />`);
+    const altBadgeDesc = p.melhorAlternativa ? `<span class="alt-badge">★ Melhor: ${p.melhorAlternativa}</span>` : '';
+    const durBadgeDesc = !p.paraTexto ? badgeDuracao(p.desc, gerarVideoAtivo) : '';
+    const melhorCanonico = p.melhorAlternativa ? tipoCanonico(p.melhorAlternativa) : '';
+    const opcoesHtml = (p.opcoes && p.opcoes.length > 0)
+      ? `<div class="opcoes-wrap">${p.opcoes.map(o => {
+          const isRec = !!melhorCanonico && tipoCanonico(o.tipo) === melhorCanonico;
+          return `<span class="opcao-chip ${isRec ? 'rec' : ''}">
+            <span class="opcao-tipo">${o.tipo}</span>
+            <span class="opcao-texto" onclick="buscarSugestao(${p.id},${o.num})" title="Buscar no Google/YouTube">${o.keyword}</span>
+            <span class="opcao-copy" onclick="copiarSugestao(${p.id},${o.num})" title="Copiar texto">📋</span>
+            ${isRec ? '<span class="opcao-star" title="Sugestão recomendada">★</span>' : ''}
+          </span>`;
+        }).join('')}</div>`
+      : '';
+    return `<tr>
+      <td class="col-num">${String(p.id).padStart(3,'0')}</td>
+      <td class="col-desc">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+          <span class="desc-text">${p.desc}</span>
+          ${!p.paraTexto ? `<div style="display:flex; flex-direction:column; align-items:stretch; gap:6px; flex-shrink:0; min-width:170px;">
+            <select class="status-select" onchange="setStatus(${p.id}, this.value)" style="width:100%;${p.status==='waiting'?'color:#f5a623;border-color:#6b3a00;background:#1f1200;':''}${p.status==='ia'?'color:#c084fc;border-color:#7c3aed;background:#1a0a2e;':''}${p.status==='organized'?'color:#4caf50;border-color:#1a3a1a;background:#0a1f0a;':''}">
+              <option value="pending"  ${p.status==='pending'  ? 'selected':''}>Sem busca</option>
+              <option value="ia"       ${p.status==='ia'       ? 'selected':''}>Gerando IA</option>
+              <option value="waiting"  ${p.status==='waiting'  ? 'selected':''}>Aguardando dl</option>
+              <option value="organized"${p.status==='organized'? 'selected':''}>Baixado</option>
+            </select>
+            ${p.status==='ia' ? `<select class="ia-substatus" onchange="setIaSubstatus(${p.id}, this.value)">
+              <option value="img" ${(p.iaSubstatus||'img')==='img'?'selected':''}>Gerando imagem</option>
+              <option value="vid" ${(p.iaSubstatus||'img')==='vid'?'selected':''}>Gerando vídeo</option>
+            </select>` : ''}
+            <div style="display:flex; gap:6px;">
+              <button class="btn-advance" onclick="avancarStatus(${p.id})" title="Avançar etapa" style="flex:1;">→</button>
+              <button class="btn-ia-quick" onclick="setStatus(${p.id},'ia')" title="Marcar como Gerando IA">🎨 IA</button>
+              <button class="btn-done-quick" onclick="setStatus(${p.id},'organized')" title="Marcar como Baixado">✓</button>
+            </div>
+          </div>` : ''}
+        </div>
+        ${altBadgeDesc}${durBadgeDesc}${opcoesHtml}
+        <div class="link-cell" style="margin-top:8px;">${linkHtml}</div>
+        <div style="margin-top:10px;">
+          <label class="chk-texto" title="Marcar quando não há necessidade de buscar/baixar Stock, IA, YouTube etc — a parte é só texto.">
+            <input type="checkbox" ${p.paraTexto ? 'checked' : ''} onchange="toggleParaTexto(${p.id}, this.checked)" /> TÍTULO / TEXTO
+          </label>
+          ${p.paraTexto ? `<span class="badge b-texto">📝 Sem mídia</span>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+  atualizarStats();
+}
+
+function setLink(id, val) {
+  const p = partes.find(x => x.id === id);
+  if (!p) return;
+  p.link = val;
+  if (val && p.status === 'pending') p.status = 'waiting';
+  if (!val && p.status === 'waiting') p.status = 'pending';
+  salvarLocalmente();
+  renderPartes();
+}
+
+
+
+function gerarScript() {
+  if (!partes.length) { alert('Importe o roteiro primeiro.'); return; }
+  const base = document.getElementById('path-base').value.trim() || 'C:\\Projetos\\' + projetoAtual;
+  const subs = ['sub1','sub2','sub3','sub4'].map(id => document.getElementById(id).value.trim()).filter(Boolean);
+  let total = 0;
+  let script = `@echo off\nchcp 65001 > nul\nsetlocal\nset "BASE=${base}"\necho ============================================\necho  Criando pastas para: ${projetoAtual}\necho ============================================\necho.\n\n`;
+  partes.forEach(p => {
+    const folder = nomePasta(p.id, p.desc);
+    script += `mkdir "%BASE%\\${folder}" 2>nul\n`;
+    total++;
+    subs.forEach(s => { script += `mkdir "%BASE%\\${folder}\\${s}" 2>nul\n`; total++; });
+  });
+  script += `\necho.\necho ============================================\necho  Pronto! ${partes.length} partes criadas.\necho ============================================\npause`;
+  document.getElementById('script-content').textContent = script;
+  document.getElementById('script-count').textContent = `${partes.length} partes, ${total} pastas`;
+  document.getElementById('script-output').style.display = 'block';
+}
+
+function copiarScript() {
+  navigator.clipboard.writeText(document.getElementById('script-content').textContent)
+    .then(() => { alert('Script copiado! Cole no Bloco de Notas e salve como .bat'); });
+}
+
+function baixarScript() {
+  const txt = document.getElementById('script-content').textContent;
+  const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (projetoAtual || 'projeto') + '_criar_pastas.bat';
+  a.click();
+}
+
+function exportarJSON() {
+  if (!partes.length) { alert('Nenhuma parte para exportar.'); return; }
+  const dados = {
+    projeto: projetoAtual,
+    salvo: new Date().toISOString(),
+    versao: '2.0',
+    partes: partes
+  };
+  const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (projetoAtual || 'projeto') + '_backup.json';
+  a.click();
+}
+
+function importarJSON(file) {
+  if (!file) return;
+  const nameEl = document.getElementById('json-file-name');
+  if (nameEl) nameEl.textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const dados = JSON.parse(e.target.result);
+      if (!dados.partes || !Array.isArray(dados.partes)) {
+        alert('Arquivo JSON inválido — não encontrei as partes do projeto.'); return;
+      }
+      partes = dados.partes;
+      projetoAtual = dados.projeto || file.name.replace('.json','');
+      document.getElementById('projeto-nome').value = projetoAtual;
+      document.getElementById('projeto-display').textContent = projetoAtual;
+      document.title = 'Painel — ' + projetoAtual;
+      salvarLocalmente();
+      switchTab('partes', document.querySelectorAll('.tab')[1]);
+    } catch(err) {
+      alert('Erro ao ler o arquivo JSON: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function buscarSugestao(partId, opcaoNum) {
+  const p = partes.find(x => x.id === partId);
+  const o = p && p.opcoes.find(x => x.num === opcaoNum);
+  if (!o) return;
+  const tipo = (o.tipo || '').toUpperCase();
+  const url = tipo === 'YOUTUBE'
+    ? 'https://www.youtube.com/results?search_query=' + encodeURIComponent(o.keyword)
+    : 'https://www.google.com/search?q=' + encodeURIComponent(o.keyword);
+  window.open(url, '_blank');
+}
+
+function copiarSugestao(partId, opcaoNum) {
+  const p = partes.find(x => x.id === partId);
+  const o = p && p.opcoes.find(x => x.num === opcaoNum);
+  if (!o) return;
+  navigator.clipboard.writeText(o.keyword)
+    .then(() => mostrarToast('Copiado: ' + o.keyword))
+    .catch(() => mostrarToast('Não foi possível copiar'));
+}
+
+function copiarTextoFixo(texto) {
+  navigator.clipboard.writeText(texto)
+    .then(() => mostrarToast('Prompt de vídeo IA copiado'))
+    .catch(() => mostrarToast('Não foi possível copiar'));
+}
+
+function mostrarToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) { t = document.createElement('div'); t.id = 'toast'; document.body.appendChild(t); }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2200);
+}
+
+function salvarLocalmente() {
+  try {
+    const dados = { projeto: projetoAtual, partes, salvo: new Date().toISOString() };
+    localStorage.setItem('painel_producao_' + projetoAtual, JSON.stringify(dados));
+    const todos = JSON.parse(localStorage.getItem('painel_projetos') || '[]');
+    if (!todos.includes(projetoAtual)) { todos.push(projetoAtual); localStorage.setItem('painel_projetos', JSON.stringify(todos)); }
+    // Header indicator
+    const ind = document.getElementById('save-indicator');
+    if (ind) { ind.style.opacity = '1'; setTimeout(() => { ind.style.opacity = '0'; }, 2000); }
+    // Footer timestamp
+    const ts = document.getElementById('footer-saved-at');
+    if (ts) ts.textContent = 'Salvo às ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+    // Remove shake if active
+    const btnS = document.getElementById('btn-footer-save');
+    const btnB = document.getElementById('btn-footer-backup');
+    if (btnS) { btnS.classList.remove('shake'); void btnS.offsetWidth; }
+    if (btnB) btnB.classList.remove('shake');
+  } catch(e) { console.warn('localStorage indisponível'); }
+}
+
+// Shake reminder every 5 minutes
+setInterval(() => {
+  const btnS = document.getElementById('btn-footer-save');
+  const btnB = document.getElementById('btn-footer-backup');
+  if (btnS) { btnS.classList.remove('shake'); void btnS.offsetWidth; btnS.classList.add('shake'); }
+  if (btnB) { btnB.classList.remove('shake'); void btnB.offsetWidth; btnB.classList.add('shake'); }
+  setTimeout(() => {
+    if (btnS) btnS.classList.remove('shake');
+    if (btnB) btnB.classList.remove('shake');
+  }, 600);
+}, 5 * 60 * 1000);
+
+function carregarListaProjetos() {
+  try {
+    const todos = JSON.parse(localStorage.getItem('painel_projetos') || '[]');
+    const card = document.getElementById('card-projetos-salvos');
+    const lista = document.getElementById('lista-projetos');
+    if (!todos.length) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+    lista.innerHTML = todos.map(nome => {
+      const dados = JSON.parse(localStorage.getItem('painel_producao_' + nome) || '{}');
+      const dt = dados.salvo ? new Date(dados.salvo).toLocaleString('pt-BR') : '';
+      const n = dados.partes ? dados.partes.length : 0;
+      return `<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);">
+        <div style="flex:1;">
+          <span style="font-weight:500;">${nome}</span>
+          <span style="font-size:11px;color:var(--text3);margin-left:10px;">${n} partes · salvo em ${dt}</span>
+        </div>
+        <button class="btn-sm" onclick="carregarProjeto('${nome}')">Carregar</button>
+        <button class="btn-sm btn-ghost" onclick="deletarProjeto('${nome}')" style="color:var(--text3);">✕</button>
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
+
+function carregarProjeto(nome) {
+  try {
+    const dados = JSON.parse(localStorage.getItem('painel_producao_' + nome) || '{}');
+    if (!dados.partes) return;
+    partes = dados.partes;
+    projetoAtual = dados.projeto || nome;
+    filtroCategorias.clear();
+    atualizarBadgeFiltroCat();
+    filtroIASubstatus.clear();
+    atualizarBadgeFiltroIA();
+    gerarVideoAtivo = false;
+    document.getElementById('btn-gerar-video').classList.remove('active');
+    document.getElementById('projeto-display').textContent = projetoAtual;
+    document.title = `Painel — ${projetoAtual}`;
+    switchTab('partes', document.querySelectorAll('.tab')[1]);
+  } catch(e) {}
+}
+
+function deletarProjeto(nome) {
+  if (!confirm(`Deletar projeto "${nome}"? Isso não pode ser desfeito.`)) return;
+  localStorage.removeItem('painel_producao_' + nome);
+  const todos = JSON.parse(localStorage.getItem('painel_projetos') || '[]').filter(n => n !== nome);
+  localStorage.setItem('painel_projetos', JSON.stringify(todos));
+  carregarListaProjetos();
+}
+
+function limparTudo() {
+  if (!confirm('Limpar todos os dados do projeto atual?')) return;
+  partes = [];
+  projetoAtual = '';
+  filtroCategorias.clear();
+  atualizarBadgeFiltroCat();
+  filtroIASubstatus.clear();
+  atualizarBadgeFiltroIA();
+  gerarVideoAtivo = false;
+  document.getElementById('btn-gerar-video').classList.remove('active');
+  document.getElementById('roteiro-input').value = '';
+  document.getElementById('projeto-nome').value = '';
+  document.getElementById('projeto-display').textContent = 'Nenhum projeto';
+  renderPartes();
+}
+
+// ============================================================================
+// SISTEMA DE PATCHES (atualização leve sem precisar baixar um HTML novo)
+// ============================================================================
+// Formato esperado do arquivo de patch (.json):
+// {
+//   "versao": "v30",
+//   "descricao": "Ajuste de cor do botão X",
+//   "alteracoes": {
+//     "css": { "#algum-id": { "color": "#fff" } },
+//     "variaveis": { "--amber": "#ffb020" },
+//     "html": { "algum-id": "<b>novo conteúdo</b>" }
+//   }
+// }
+// "css" aplica propriedades inline nos elementos que casam com o seletor.
+// "variaveis" seta variáveis CSS globais (:root).
+// "html" substitui o innerHTML do elemento com aquele id.
+// Nada disso mexe nos seus dados/projetos — só no visual/comportamento do painel.
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+const CHAVE_VERSAO_RUNTIME = 'painel_versao_runtime';
+const CHAVE_HISTORICO_PATCHES = 'painel_historico_patches';
+let patchPendente = null;
+
+function versaoEfetiva() {
+  return localStorage.getItem(CHAVE_VERSAO_RUNTIME) || APP_VERSION;
+}
+
+function historicoPatches() {
+  try { return JSON.parse(localStorage.getItem(CHAVE_HISTORICO_PATCHES) || '[]'); }
+  catch(e) { return []; }
+}
+
+function renderHistoricoPatches() {
+  const atualEl = document.getElementById('patch-versao-atual');
+  const dataEl = document.getElementById('patch-ultima-data');
+  const listaEl = document.getElementById('patch-historico');
+  if (!atualEl) return;
+  atualEl.textContent = versaoEfetiva();
+  const hist = historicoPatches();
+  dataEl.textContent = hist[0] ? hist[0].data : '—';
+  listaEl.innerHTML = hist.length
+    ? hist.map(h => `
+        <div class="version-item" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border2);">
+          <span style="font-family:monospace;font-weight:700;color:var(--amber);">${h.v}</span>
+          <div style="flex:1;">
+            <div style="color:var(--text);">${h.descricao || 'Atualização via patch'}</div>
+            <div style="font-size:11px;color:var(--text3);">${h.data}</div>
+          </div>
+        </div>`).join('')
+    : '<div style="font-size:12px;color:var(--text3);font-style:italic;">Nenhum patch aplicado ainda.</div>';
+}
+
+function carregarPatch() {
+  const fileInput = document.getElementById('patch-file');
+  const file = fileInput.files[0];
+  const status = document.getElementById('patch-status');
+  const preview = document.getElementById('patch-preview');
+
+  if (!file) { mostrarToast('Selecione um arquivo de patch'); return; }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const patch = JSON.parse(e.target.result);
+      if (!patch.versao || !patch.alteracoes) {
+        throw new Error('Patch inválido — precisa ter "versao" e "alteracoes".');
+      }
+      patchPendente = patch;
+      const nMudancas = Object.values(patch.alteracoes).reduce((n, grupo) => n + Object.keys(grupo || {}).length, 0);
+      status.innerHTML = '';
+      document.getElementById('patch-preview-info').innerHTML = `
+        <strong>Patch carregado:</strong> versão ${esc(patch.versao)}<br>
+        ${patch.descricao ? esc(patch.descricao) + '<br>' : ''}
+        <span style="color:var(--text3);">${nMudancas} alteração(ões) prontas pra instalar.</span>`;
+      preview.style.display = 'block';
+    } catch (err) {
+      patchPendente = null;
+      preview.style.display = 'none';
+      status.innerHTML = `<span style="color:#ff6b6b;">❌ Erro ao carregar patch: ${esc(err.message)}</span>`;
+    }
+  };
+  reader.readAsText(file);
+}
+
+function aplicarPatch() {
+  if (!patchPendente) { mostrarToast('Nenhum patch pendente'); return; }
+  const patch = patchPendente;
+  let aplicadas = 0;
+
+  try {
+    if (patch.alteracoes.css) {
+      Object.entries(patch.alteracoes.css).forEach(([seletor, props]) => {
+        document.querySelectorAll(seletor).forEach(el => {
+          Object.entries(props).forEach(([prop, valor]) => { el.style[prop] = valor; aplicadas++; });
+        });
+      });
+    }
+    if (patch.alteracoes.variaveis) {
+      const root = document.documentElement;
+      Object.entries(patch.alteracoes.variaveis).forEach(([nome, valor]) => {
+        root.style.setProperty(nome, valor);
+        aplicadas++;
+      });
+    }
+    if (patch.alteracoes.html) {
+      Object.entries(patch.alteracoes.html).forEach(([id, conteudo]) => {
+        const el = document.getElementById(id);
+        if (el) { el.innerHTML = conteudo; aplicadas++; }
+      });
+    }
+
+    localStorage.setItem(CHAVE_VERSAO_RUNTIME, patch.versao);
+    const hist = historicoPatches();
+    if (!hist.find(h => h.v === patch.versao)) {
+      hist.unshift({ v: patch.versao, data: new Date().toISOString().split('T')[0], descricao: patch.descricao || 'Atualização via patch' });
+      localStorage.setItem(CHAVE_HISTORICO_PATCHES, JSON.stringify(hist));
+    }
+
+    patchPendente = null;
+    document.getElementById('patch-preview').style.display = 'none';
+    document.getElementById('patch-file').value = '';
+    renderHistoricoPatches();
+    mostrarToast(`✅ Patch aplicado! ${aplicadas} alteração(ões) instalada(s).`);
+  } catch (err) {
+    mostrarToast('Erro ao aplicar patch: ' + err.message);
+  }
+}
+
+function descartarPatch() {
+  patchPendente = null;
+  document.getElementById('patch-preview').style.display = 'none';
+  document.getElementById('patch-file').value = '';
+  document.getElementById('patch-status').innerHTML = '';
+  mostrarToast('Patch descartado');
+}
+
+carregarListaProjetos();
+renderHistoricoPatches();
+</script>
+
+<div class="video-ia-footer">
+  <button class="btn-video-ia-footer" id="btn-footer-video-ia" onclick="copiarTextoFixo(FRASE_VIDEO_IA)">🎬 Vídeo IA Prompt</button>
+</div>
+<div class="save-footer">
+  <button class="btn-save-footer" id="btn-footer-save" onclick="salvarLocalmente()">Salvar</button>
+  <button class="btn-backup-footer" id="btn-footer-backup" onclick="exportarJSON()">Backup JSON</button>
+  <span class="footer-saved-at" id="footer-saved-at"></span>
+</div>
+<div class="save-footer-spacer"></div>
+</body>
+</html>
